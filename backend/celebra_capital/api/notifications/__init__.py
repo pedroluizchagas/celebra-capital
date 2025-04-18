@@ -1,0 +1,1 @@
+default_app_config = 'celebra_capital.api.notifications.apps.NotificationsConfig' 
