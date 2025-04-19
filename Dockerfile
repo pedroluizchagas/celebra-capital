@@ -11,7 +11,7 @@ RUN npm ci
 COPY . .
 
 # Construir aplicação
-RUN npm run build || (echo "Build failed" && exit 1)
+RUN npm run build
 
 # Estágio de produção com Nginx
 FROM nginx:alpine
@@ -23,11 +23,10 @@ RUN apk add --no-cache gettext
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copiar e configurar entrypoint script
-COPY entrypoint.sh /entrypoint.sh
+# Copiar script de entrypoint
+COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 
-# Executar o script entrypoint que vai configurar as variáveis e iniciar o Nginx
-ENTRYPOINT ["/entrypoint.sh"] 
+CMD ["/entrypoint.sh"] 

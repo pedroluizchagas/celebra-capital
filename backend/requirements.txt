@@ -16,6 +16,12 @@ boto3==1.28.52
 coverage==7.3.2
 django-debug-toolbar==4.2.0
 pywebpush==1.14.0
+xlsxwriter==3.2.3
+reportlab==4.2.0
 
 # OCR
-google-cloud-vision==3.4.3 
+google-cloud-vision==3.4.3
+
+# Monitoramento
+sentry-sdk==1.40.5
+django-prometheus==2.3.1 

@@ -1,0 +1,10 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "/entrypoint.sh"
+restartPolicyType = "ALWAYS"
+
+[variables]
+BACKEND_URL = "https://celebra-capital-production.up.railway.app/api/" 

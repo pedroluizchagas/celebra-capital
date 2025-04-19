@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import notificationService, {
-  Notification,
+  Notification as NotificationType,
   UserNotificationSettings,
 } from '../services/notificationService'
 import { useAuth } from './AuthContext'
 
 interface NotificationContextType {
-  notifications: Notification[]
+  notifications: NotificationType[]
   unreadCount: number
   isLoading: boolean
   settings: UserNotificationSettings | null
@@ -35,7 +35,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { isAuthenticated } = useAuth()
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [notifications, setNotifications] = useState<NotificationType[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [settings, setSettings] = useState<UserNotificationSettings | null>(
@@ -165,7 +165,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       )
 
       // Verificar permissão
-      const permission = await Notification.requestPermission()
+      const permission = await window.Notification.requestPermission()
       if (permission !== 'granted') {
         console.warn('Permissão para notificações negada')
         return

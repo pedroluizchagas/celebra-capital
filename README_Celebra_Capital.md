@@ -111,7 +111,7 @@ Este README serve como:
 | Dashboard admin - Relatórios      | ✅ Concluído | Visualizações gráficas e exportação para CSV, Excel, PDF |
 | Autenticação e Segurança          | ✅ Concluído | Implementação de JWT, login/cadastro e rotas protegidas  |
 | Integração Frontend-Backend       | ✅ Concluído | FormFlow, DocumentUpload, Signature e Success integrados |
-| Deploy                            | ⏳ Pendente  | Railway pré-configurado, mas falta deploy real           |
+| Deploy                            | ✅ Concluído | Configurado para Railway com CI/CD e monitoramento       |
 
 ---
 
@@ -135,7 +135,7 @@ Este README serve como:
 - [x] Integração com OCR
 - [x] Desenvolvimento do dashboard administrativo (base)
 - [x] Finalização do dashboard interno (relatórios)
-- [ ] Deploy e testes finais
+- [x] Deploy e testes finais
 
 ---
 
@@ -166,11 +166,11 @@ Este README serve como:
    - ✅ Adicionar notificações por email
    - ✅ Implementar notificações push no navegador
    - ✅ Criar centro de notificações no dashboard
-7. Fazer deploy da aplicação completa
-   - Configurar ambiente de produção no Railway
-   - Implementar CI/CD para deploy automático
-   - Configurar monitoramento e logging
-   - Realizar testes de carga e segurança
+7. ✅ Fazer deploy da aplicação completa
+   - ✅ Configurar ambiente de produção no Railway
+   - ✅ Implementar CI/CD para deploy automático
+   - ✅ Configurar monitoramento e logging
+   - ✅ Realizar testes de carga e segurança
 
 ---
 
