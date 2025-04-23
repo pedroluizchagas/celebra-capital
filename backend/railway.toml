@@ -1,0 +1,12 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "gunicorn celebra_capital.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+restartPolicyType = "ALWAYS"
+healthcheckPath = "/api/health/"
+healthcheckTimeout = 300
+
+[variables]
+PORT = "8000" 
