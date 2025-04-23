@@ -11,6 +11,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # API URLs
     path('api/v1/', include('celebra_capital.api.urls')),
+    # Endpoint de saúde diretamente em /api/health/
+    path('api/health/', include('celebra_capital.api.health.urls')),
     # JWT Token
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

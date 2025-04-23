@@ -6,4 +6,5 @@ urlpatterns = [
     path('documents/', include('celebra_capital.api.documents.urls', namespace='documents')),
     path('notifications/', include('celebra_capital.api.notifications.urls', namespace='notifications')),
     path('core/', include('celebra_capital.api.core.urls')),
+    path('health/', include('celebra_capital.api.health.urls')),
 ] 
