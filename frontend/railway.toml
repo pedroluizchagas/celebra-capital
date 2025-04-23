@@ -3,8 +3,10 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "/entrypoint.sh"
+startCommand = "nginx -g 'daemon off;'"
 restartPolicyType = "ALWAYS"
+healthcheckPath = "/health/"
+healthcheckTimeout = 300
 
 [variables]
 BACKEND_URL = "https://celebra-capital-production.up.railway.app/api/" 
