@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, staging]
   pull_request:
     branches: [main, develop]
 
@@ -34,6 +34,12 @@ jobs:
 
       - name: Run tests
         run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./frontend/coverage
+          fail_ci_if_error: true
 
       - name: Build
         run: npm run build
@@ -92,16 +98,47 @@ jobs:
           file: ./backend/coverage.xml
           fail_ci_if_error: true
 
-  deploy:
+  deploy-development:
     needs: [frontend-test, backend-test]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment: development
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy to Railway
+      - name: Deploy to Railway (Development)
         uses: bervProject/railway-deploy@main
         with:
           railway_token: ${{ secrets.RAILWAY_TOKEN }}
-          service: ${{ secrets.RAILWAY_SERVICE }}
+          service: ${{ secrets.RAILWAY_SERVICE_DEV }}
+
+  deploy-staging:
+    needs: [frontend-test, backend-test]
+    if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Railway (Staging)
+        uses: bervProject/railway-deploy@main
+        with:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}
+          service: ${{ secrets.RAILWAY_SERVICE_STAGING }}
+
+  deploy-production:
+    needs: [frontend-test, backend-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Railway (Production)
+        uses: bervProject/railway-deploy@main
+        with:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}
+          service: ${{ secrets.RAILWAY_SERVICE_PROD }}

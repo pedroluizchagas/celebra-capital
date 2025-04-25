@@ -34,7 +34,7 @@ Cada item possui um status:
 | 🟡 Pipeline **CI/CD GitHub Actions → Railway** (lint → test → build → deploy)              | 🟡 In Progress | Testes automatizados |
 | 🟡 Adicionar **Sentry** (front + back)                                                     | 🟡 In Progress | Pipeline CI/CD       |
 | 🟡 Estruturar logs JSON (logrus/structlog)                                                 | 🟡 In Progress | Pipeline CI/CD       |
-| ⬜ Configurar ambientes separados (dev/staging/prod) com variáveis de ambiente apropriadas | ⬜ To Do       | Pipeline CI/CD       |
+| 🟡 Configurar ambientes separados (dev/staging/prod) com variáveis de ambiente apropriadas | 🟡 In Progress | Pipeline CI/CD       |
 
 ---
 
