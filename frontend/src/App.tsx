@@ -1,5 +1,6 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import * as Sentry from '@sentry/react'
 import { useState, useEffect } from 'react'
 
 // Importar componentes de autenticação
@@ -25,6 +26,33 @@ import Reports from './pages/admin/Reports'
 import { NotificationProvider } from './contexts/NotificationContext'
 import NotificationsPage from './pages/Notifications'
 
+// Importar o ErrorProvider
+import { ErrorProvider } from './contexts/ErrorContext'
+import ErrorDisplay from './components/ErrorDisplay'
+
+// Componente de fallback para o ErrorBoundary do Sentry
+const FallbackComponent = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">
+          Algo deu errado
+        </h2>
+        <p className="text-gray-600 mb-6">
+          Ocorreu um erro inesperado na aplicação. Nossa equipe foi notificada e
+          estamos trabalhando na solução.
+        </p>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-200"
+          onClick={() => (window.location.href = '/')}
+        >
+          Voltar para a página inicial
+        </button>
+      </div>
+    </div>
+  </div>
+)
+
 function App() {
   const [darkMode, setDarkMode] = useState(false)
 
@@ -49,63 +77,94 @@ function App() {
   }
 
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <Router>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <Navbar toggleDarkMode={toggleDarkMode} darkMode={darkMode} />
-
-            <main className="container mx-auto px-4 py-8">
-              <div className="flex justify-center">
-                <div className="w-full max-w-md">
-                  <Routes>
-                    {/* Rotas públicas */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/" element={<FormFlow />} />
-
-                    {/* Rotas protegidas */}
-                    <Route element={<PrivateRoute />}>
-                      <Route path="/form-flow" element={<FormFlow />} />
-                      <Route
-                        path="/document-upload"
-                        element={<DocumentUpload />}
-                      />
-                      <Route path="/signature" element={<Signature />} />
-                      <Route path="/success" element={<Success />} />
-
-                      {/* Rotas administrativas */}
-                      <Route path="/admin" element={<AdminDashboard />}>
-                        <Route index element={<></>} />
-                        <Route path="proposals" element={<ProposalList />} />
-                        <Route
-                          path="proposals/:id"
-                          element={<ProposalDetails />}
-                        />
-                        <Route path="reports" element={<Reports />} />
-                      </Route>
-
-                      {/* Adicionar a rota de notificações no componente PrivateRoutes */}
-                      <Route
-                        path="/notifications"
-                        element={<NotificationsPage />}
-                      />
-                    </Route>
-                  </Routes>
-                </div>
-              </div>
-            </main>
-
-            <footer className="bg-white dark:bg-gray-800 py-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="container mx-auto px-4 text-center text-sm text-gray-600 dark:text-gray-400">
-                <p>© 2023 Celebra Capital. Todos os direitos reservados.</p>
-                <p className="mt-1">Correspondente Bancário autorizado</p>
-              </div>
-            </footer>
-          </div>
-        </Router>
-      </NotificationProvider>
-    </AuthProvider>
+    <Sentry.ErrorBoundary fallback={FallbackComponent}>
+      <ErrorProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <BrowserRouter>
+              <ErrorDisplay />
+              <Routes>
+                <Route path="/" element={<Login />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route
+                  path="/upload-documents"
+                  element={
+                    <PrivateRoute>
+                      <DocumentUpload />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/form"
+                  element={
+                    <PrivateRoute>
+                      <FormFlow />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/signature"
+                  element={
+                    <PrivateRoute>
+                      <Signature />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/success"
+                  element={
+                    <PrivateRoute>
+                      <Success />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/notifications"
+                  element={
+                    <PrivateRoute>
+                      <NotificationsPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/admin/dashboard"
+                  element={
+                    <PrivateRoute adminOnly>
+                      <AdminDashboard />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/admin/proposals"
+                  element={
+                    <PrivateRoute adminOnly>
+                      <ProposalList />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/admin/proposals/:id"
+                  element={
+                    <PrivateRoute adminOnly>
+                      <ProposalDetails />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/admin/reports"
+                  element={
+                    <PrivateRoute adminOnly>
+                      <Reports />
+                    </PrivateRoute>
+                  }
+                />
+              </Routes>
+            </BrowserRouter>
+          </NotificationProvider>
+        </AuthProvider>
+      </ErrorProvider>
+    </Sentry.ErrorBoundary>
   )
 }
 

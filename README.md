@@ -32,8 +32,8 @@ Cada item possui um status:
 | ------------------------------------------------------------------------------------------ | -------------- | -------------------- |
 | ✅ Configurar **Jest + RTL** (frontend) & **pytest** (backend) – coverage ≥ 80 %           | ✅ Done        | —                    |
 | 🟡 Pipeline **CI/CD GitHub Actions → Railway** (lint → test → build → deploy)              | 🟡 In Progress | Testes automatizados |
-| ⬜ Adicionar **Sentry** (front + back)                                                     | ⬜ To Do       | Pipeline CI/CD       |
-| ⬜ Estruturar logs JSON (logrus/structlog)                                                 | ⬜ To Do       | Pipeline CI/CD       |
+| 🟡 Adicionar **Sentry** (front + back)                                                     | 🟡 In Progress | Pipeline CI/CD       |
+| 🟡 Estruturar logs JSON (logrus/structlog)                                                 | 🟡 In Progress | Pipeline CI/CD       |
 | ⬜ Configurar ambientes separados (dev/staging/prod) com variáveis de ambiente apropriadas | ⬜ To Do       | Pipeline CI/CD       |
 
 ---
