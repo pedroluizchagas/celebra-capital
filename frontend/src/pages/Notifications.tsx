@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNotifications } from '../contexts/NotificationContext'
 import { Tab } from '@headlessui/react'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import Navbar from '../components/Navbar'
+import notificationService from '../services/notificationService'
 
 const NotificationsPage: React.FC = () => {
   const {
@@ -15,11 +18,27 @@ const NotificationsPage: React.FC = () => {
   } = useNotifications()
 
   const [activeTab, setActiveTab] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Ref para container da lista virtualizada
+  const parentRef = React.useRef<HTMLDivElement>(null)
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const data = await notificationService.getNotifications()
+      // Atualizar estado local
+      // notifications.current = data
+    } catch (error) {
+      console.error('Erro ao buscar notificações:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    // Recarregar notificações ao abrir a página
-    loadNotifications()
-  }, [loadNotifications])
+    fetchNotifications()
+  }, [fetchNotifications])
 
   // Formatar data para exibição
   const formatDate = (dateString: string) => {
@@ -69,476 +88,305 @@ const NotificationsPage: React.FC = () => {
     registerForPushNotifications()
   }
 
+  // Aplicar filtro com base na tab ativa
+  const filteredNotifications = useMemo(() => {
+    return activeTab === 0
+      ? notifications
+      : notifications.filter((notification) => !notification.read)
+  }, [notifications, activeTab])
+
+  // Configurar virtualização da lista
+  const rowVirtualizer = useVirtualizer({
+    count: filteredNotifications.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 100, // altura estimada por item
+    overscan: 5, // número de itens a serem renderizados além da área visível
+  })
+
+  // Renderização condicional baseada no ícone do tipo de notificação
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'info':
+        return (
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+            <svg
+              className="w-5 h-5 text-blue-600 dark:text-blue-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+          </div>
+        )
+      case 'success':
+      case 'approval':
+        return (
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+            <svg
+              className="w-5 h-5 text-green-600 dark:text-green-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              ></path>
+            </svg>
+          </div>
+        )
+      case 'warning':
+      case 'analysis':
+        return (
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900 flex items-center justify-center">
+            <svg
+              className="w-5 h-5 text-yellow-600 dark:text-yellow-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              ></path>
+            </svg>
+          </div>
+        )
+      case 'error':
+      case 'rejection':
+        return (
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+            <svg
+              className="w-5 h-5 text-red-600 dark:text-red-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </div>
+        )
+      default:
+        return (
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <svg
+              className="w-5 h-5 text-gray-600 dark:text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              ></path>
+            </svg>
+          </div>
+        )
+    }
+  }
+
+  // Componente otimizado de notificação
+  const NotificationItem = React.memo(
+    ({ notification }: { notification: any }) => {
+      const handleClick = () => {
+        if (!notification.read) {
+          markAsRead(notification.id)
+        }
+      }
+
+      return (
+        <div
+          onClick={handleClick}
+          className={`flex p-4 mb-4 rounded-lg shadow border border-gray-100 dark:border-gray-700 ${
+            notification.read
+              ? 'bg-white dark:bg-gray-800'
+              : 'bg-blue-50 dark:bg-blue-900/20'
+          } cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50`}
+        >
+          {getNotificationIcon(notification.notification_type)}
+          <div className="ml-4 flex-1">
+            <div className="flex items-center justify-between">
+              <h3
+                className={`text-sm font-medium ${
+                  notification.read
+                    ? 'text-gray-700 dark:text-gray-300'
+                    : 'text-gray-900 dark:text-white'
+                }`}
+              >
+                {notification.title}
+              </h3>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {formatDate(notification.created_at)}
+              </span>
+            </div>
+            <p
+              className={`mt-1 text-sm ${
+                notification.read
+                  ? 'text-gray-500 dark:text-gray-400'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              {notification.content}
+            </p>
+            {!notification.read && (
+              <span className="inline-flex items-center mt-2 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                Nova
+              </span>
+            )}
+          </div>
+        </div>
+      )
+    }
+  )
+
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-12">
+      <svg
+        className="w-16 h-16 text-gray-400 dark:text-gray-600 mb-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
+          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+        ></path>
+      </svg>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        Nenhuma notificação
+      </h3>
+      <p className="text-gray-500 dark:text-gray-400 text-center max-w-md">
+        Você não tem{' '}
+        {activeTab === 1 ? 'notificações não lidas' : 'notificações'} no
+        momento.
+      </p>
+    </div>
+  )
+
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          className="flex p-4 rounded-lg shadow border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 animate-pulse"
+        >
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+          <div className="ml-4 flex-1">
+            <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full w-3/4 mb-4"></div>
+            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full mb-2"></div>
+            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-5/6"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-        Notificações
-      </h1>
-
-      <Tab.Group selectedIndex={activeTab} onChange={setActiveTab}>
-        <Tab.List className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-700 p-1 mb-8">
-          <Tab
-            className={({ selected }) =>
-              `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
-              ${
-                selected
-                  ? 'bg-white dark:bg-gray-800 shadow text-celebra-blue'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-800'
-              }`
-            }
-          >
-            Todas as Notificações
-          </Tab>
-          <Tab
-            className={({ selected }) =>
-              `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
-              ${
-                selected
-                  ? 'bg-white dark:bg-gray-800 shadow text-celebra-blue'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-800'
-              }`
-            }
-          >
-            Configurações
-          </Tab>
-        </Tab.List>
-        <Tab.Panels>
-          <Tab.Panel>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Todas as Notificações ({notifications.length})
-                </h2>
-                {unreadCount > 0 && (
-                  <button
-                    className="text-sm text-celebra-blue hover:text-celebra-blue-dark"
-                    onClick={() => markAllAsRead()}
-                  >
-                    Marcar todas como lidas
-                  </button>
-                )}
-              </div>
-
-              {notifications.length === 0 ? (
-                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                  <svg
-                    className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
-                  <p className="mt-4">Você não tem notificações ainda.</p>
-                </div>
-              ) : (
-                <div>
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-4 border-b border-gray-200 dark:border-gray-700 ${
-                        !notification.read
-                          ? 'bg-blue-50 dark:bg-blue-900/20'
-                          : ''
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-start">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2 ${getNotificationTypeClass(
-                                notification.notification_type
-                              )}`}
-                            >
-                              {notification.notification_type_display}
-                            </span>
-                            <h3 className="text-base font-medium text-gray-900 dark:text-white">
-                              {notification.title}
-                            </h3>
-                          </div>
-                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                            {notification.content}
-                          </p>
-                          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                            {formatDate(notification.created_at)}
-                          </div>
-                        </div>
-                        {!notification.read && (
-                          <button
-                            className="ml-4 flex-shrink-0 text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
-                            onClick={() => markAsRead(notification.id)}
-                          >
-                            <span className="sr-only">Marcar como lida</span>
-                            <svg
-                              className="h-5 w-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Navbar />
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="flex flex-col md:flex-row items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 md:mb-0">
+            Notificações
+          </h1>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setActiveTab(0)}
+              className={`px-4 py-2 rounded-md ${
+                activeTab === 0
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+              } transition-colors`}
+            >
+              Todas
+            </button>
+            <button
+              onClick={() => setActiveTab(1)}
+              className={`px-4 py-2 rounded-md ${
+                activeTab === 1
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+              } transition-colors`}
+            >
+              Não lidas
+              {notifications.filter((n) => !n.read).length > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+                  {notifications.filter((n) => !n.read).length}
+                </span>
               )}
-            </div>
-          </Tab.Panel>
-          <Tab.Panel>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Configurações de Notificação
-                </h2>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Escolha como e quando deseja receber notificações.
-                </p>
-              </div>
+            </button>
+            <button
+              onClick={markAllAsRead}
+              disabled={!notifications.some((n) => !n.read)}
+              className={`px-4 py-2 rounded-md ${
+                notifications.some((n) => !n.read)
+                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+              } transition-colors`}
+            >
+              Marcar todas como lidas
+            </button>
+          </div>
+        </div>
 
-              <div className="p-4 space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-base font-medium text-gray-900 dark:text-white">
-                    Canais de Notificação
-                  </h3>
-
-                  {settings ? (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                            Notificações por Email
-                          </span>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Receba notificações no seu email
-                          </p>
-                        </div>
-                        <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                          <input
-                            type="checkbox"
-                            id="toggle-email"
-                            className="sr-only"
-                            checked={settings.email_notifications}
-                            onChange={(e) =>
-                              handleSettingChange(
-                                'email_notifications',
-                                e.target.checked
-                              )
-                            }
-                          />
-                          <label
-                            htmlFor="toggle-email"
-                            className={`block overflow-hidden h-6 rounded-full cursor-pointer ${
-                              settings.email_notifications
-                                ? 'bg-celebra-blue'
-                                : 'bg-gray-300 dark:bg-gray-600'
-                            }`}
-                          >
-                            <span
-                              className={`block h-6 w-6 rounded-full bg-white transform transition-transform ${
-                                settings.email_notifications
-                                  ? 'translate-x-4'
-                                  : 'translate-x-0'
-                              }`}
-                            ></span>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                            Notificações Push
-                          </span>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Receba notificações no navegador mesmo quando não
-                            estiver usando o site
-                          </p>
-                        </div>
-                        {settings.push_subscription_json ? (
-                          <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                            <input
-                              type="checkbox"
-                              id="toggle-push"
-                              className="sr-only"
-                              checked={settings.push_notifications}
-                              onChange={(e) =>
-                                handleSettingChange(
-                                  'push_notifications',
-                                  e.target.checked
-                                )
-                              }
-                            />
-                            <label
-                              htmlFor="toggle-push"
-                              className={`block overflow-hidden h-6 rounded-full cursor-pointer ${
-                                settings.push_notifications
-                                  ? 'bg-celebra-blue'
-                                  : 'bg-gray-300 dark:bg-gray-600'
-                              }`}
-                            >
-                              <span
-                                className={`block h-6 w-6 rounded-full bg-white transform transition-transform ${
-                                  settings.push_notifications
-                                    ? 'translate-x-4'
-                                    : 'translate-x-0'
-                                }`}
-                              ></span>
-                            </label>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={handleEnablePushNotifications}
-                            className="px-3 py-1 text-xs font-medium text-white bg-celebra-blue rounded-md hover:bg-celebra-blue-dark"
-                          >
-                            Ativar Notificações Push
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="py-4 text-center text-gray-500 dark:text-gray-400">
-                      Carregando configurações...
-                    </div>
-                  )}
-                </div>
-
-                {settings && (
-                  <div className="pt-6 border-t border-gray-200 dark:border-gray-700 space-y-4">
-                    <h3 className="text-base font-medium text-gray-900 dark:text-white">
-                      Tipos de Notificação
-                    </h3>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Atualizações de Status da Proposta
-                      </span>
-                      <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                        <input
-                          type="checkbox"
-                          id="toggle-status"
-                          className="sr-only"
-                          checked={settings.proposal_status_updates}
-                          onChange={(e) =>
-                            handleSettingChange(
-                              'proposal_status_updates',
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <label
-                          htmlFor="toggle-status"
-                          className={`block overflow-hidden h-6 rounded-full cursor-pointer ${
-                            settings.proposal_status_updates
-                              ? 'bg-celebra-blue'
-                              : 'bg-gray-300 dark:bg-gray-600'
-                          }`}
-                        >
-                          <span
-                            className={`block h-6 w-6 rounded-full bg-white transform transition-transform ${
-                              settings.proposal_status_updates
-                                ? 'translate-x-4'
-                                : 'translate-x-0'
-                            }`}
-                          ></span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Solicitações de Documentos
-                      </span>
-                      <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                        <input
-                          type="checkbox"
-                          id="toggle-document"
-                          className="sr-only"
-                          checked={settings.document_requests}
-                          onChange={(e) =>
-                            handleSettingChange(
-                              'document_requests',
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <label
-                          htmlFor="toggle-document"
-                          className={`block overflow-hidden h-6 rounded-full cursor-pointer ${
-                            settings.document_requests
-                              ? 'bg-celebra-blue'
-                              : 'bg-gray-300 dark:bg-gray-600'
-                          }`}
-                        >
-                          <span
-                            className={`block h-6 w-6 rounded-full bg-white transform transition-transform ${
-                              settings.document_requests
-                                ? 'translate-x-4'
-                                : 'translate-x-0'
-                            }`}
-                          ></span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Aprovações de Proposta
-                      </span>
-                      <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                        <input
-                          type="checkbox"
-                          id="toggle-approval"
-                          className="sr-only"
-                          checked={settings.proposal_approvals}
-                          onChange={(e) =>
-                            handleSettingChange(
-                              'proposal_approvals',
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <label
-                          htmlFor="toggle-approval"
-                          className={`block overflow-hidden h-6 rounded-full cursor-pointer ${
-                            settings.proposal_approvals
-                              ? 'bg-celebra-blue'
-                              : 'bg-gray-300 dark:bg-gray-600'
-                          }`}
-                        >
-                          <span
-                            className={`block h-6 w-6 rounded-full bg-white transform transition-transform ${
-                              settings.proposal_approvals
-                                ? 'translate-x-4'
-                                : 'translate-x-0'
-                            }`}
-                          ></span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Rejeições de Proposta
-                      </span>
-                      <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                        <input
-                          type="checkbox"
-                          id="toggle-rejection"
-                          className="sr-only"
-                          checked={settings.proposal_rejections}
-                          onChange={(e) =>
-                            handleSettingChange(
-                              'proposal_rejections',
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <label
-                          htmlFor="toggle-rejection"
-                          className={`block overflow-hidden h-6 rounded-full cursor-pointer ${
-                            settings.proposal_rejections
-                              ? 'bg-celebra-blue'
-                              : 'bg-gray-300 dark:bg-gray-600'
-                          }`}
-                        >
-                          <span
-                            className={`block h-6 w-6 rounded-full bg-white transform transition-transform ${
-                              settings.proposal_rejections
-                                ? 'translate-x-4'
-                                : 'translate-x-0'
-                            }`}
-                          ></span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Notificações do Sistema
-                      </span>
-                      <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                        <input
-                          type="checkbox"
-                          id="toggle-system"
-                          className="sr-only"
-                          checked={settings.system_notifications}
-                          onChange={(e) =>
-                            handleSettingChange(
-                              'system_notifications',
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <label
-                          htmlFor="toggle-system"
-                          className={`block overflow-hidden h-6 rounded-full cursor-pointer ${
-                            settings.system_notifications
-                              ? 'bg-celebra-blue'
-                              : 'bg-gray-300 dark:bg-gray-600'
-                          }`}
-                        >
-                          <span
-                            className={`block h-6 w-6 rounded-full bg-white transform transition-transform ${
-                              settings.system_notifications
-                                ? 'translate-x-4'
-                                : 'translate-x-0'
-                            }`}
-                          ></span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Lembretes
-                      </span>
-                      <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                        <input
-                          type="checkbox"
-                          id="toggle-reminder"
-                          className="sr-only"
-                          checked={settings.reminders}
-                          onChange={(e) =>
-                            handleSettingChange('reminders', e.target.checked)
-                          }
-                        />
-                        <label
-                          htmlFor="toggle-reminder"
-                          className={`block overflow-hidden h-6 rounded-full cursor-pointer ${
-                            settings.reminders
-                              ? 'bg-celebra-blue'
-                              : 'bg-gray-300 dark:bg-gray-600'
-                          }`}
-                        >
-                          <span
-                            className={`block h-6 w-6 rounded-full bg-white transform transition-transform ${
-                              settings.reminders
-                                ? 'translate-x-4'
-                                : 'translate-x-0'
-                            }`}
-                          ></span>
-                        </label>
-                      </div>
-                    </div>
+        {isLoading ? (
+          <LoadingSkeleton />
+        ) : filteredNotifications.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <div
+            ref={parentRef}
+            className="overflow-auto"
+            style={{ height: 'calc(100vh - 200px)' }}
+          >
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const notification = filteredNotifications[virtualRow.index]
+                return (
+                  <div
+                    key={notification.id}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    <NotificationItem notification={notification} />
                   </div>
-                )}
-              </div>
+                )
+              })}
             </div>
-          </Tab.Panel>
-        </Tab.Panels>
-      </Tab.Group>
+          </div>
+        )}
+      </main>
     </div>
   )
 }

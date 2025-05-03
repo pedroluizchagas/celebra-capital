@@ -1,4 +1,4 @@
-import api from './api'
+import api, { createCacheConfig, apiUtils } from './api'
 
 interface ProposalData {
   credit_type: string
@@ -44,6 +44,14 @@ interface ProposalFilters {
   page_size?: number
 }
 
+interface SignatureStatus {
+  status: 'pending' | 'completed' | 'failed'
+  message?: string
+  document_url?: string
+  signature_url?: string
+  provider?: string
+}
+
 const proposalService = {
   /**
    * Simulação de crédito
@@ -87,18 +95,49 @@ const proposalService = {
   },
 
   /**
-   * Enviar assinatura
+   * Enviar proposta para assinatura
    */
-  submitSignature: async (proposalId: number, signatureData: string) => {
+  submitSignature: async (proposalId: number): Promise<void> => {
     try {
-      const response = await api.post(`/proposals/${proposalId}/signature/`, {
-        signature_data: signatureData,
-      })
-      return response.data
+      await api.post(`/signatures/${proposalId}/request/`)
     } catch (error) {
-      console.error('Erro ao enviar assinatura:', error)
+      console.error(
+        `Erro ao iniciar processo de assinatura para proposta ${proposalId}:`,
+        error
+      )
       throw error
     }
+  },
+
+  /**
+   * Verificar status da assinatura
+   */
+  getSignatureStatus: async (
+    proposalId: number,
+    cacheConfig?: ReturnType<typeof createCacheConfig>
+  ): Promise<SignatureStatus> => {
+    try {
+      const data = await apiUtils.get<SignatureStatus>(
+        `/signatures/${proposalId}/status/`,
+        {},
+        cacheConfig ||
+          createCacheConfig(`signature_status_${proposalId}`, 30, true)
+      )
+      return data
+    } catch (error) {
+      console.error(
+        `Erro ao verificar status da assinatura da proposta ${proposalId}:`,
+        error
+      )
+      throw error
+    }
+  },
+
+  /**
+   * Obter URL para download do documento assinado
+   */
+  getSignedDocumentUrl: (proposalId: number) => {
+    return `${api.defaults.baseURL}/signatures/${proposalId}/download/`
   },
 
   /**
@@ -356,6 +395,39 @@ const proposalService = {
       return response.data
     } catch (error) {
       console.error(`Erro ao obter dados para gráfico ${chartType}:`, error)
+      throw error
+    }
+  },
+
+  // Adicionar funções para comentários
+  getProposalComments: async (proposalId: number) => {
+    try {
+      const response = await api.get(
+        `/api/v1/proposals/${proposalId}/comments/`
+      )
+      return response.data
+    } catch (error) {
+      console.error('Erro ao obter comentários da proposta:', error)
+      throw error
+    }
+  },
+
+  addProposalComment: async (
+    proposalId: number,
+    text: string,
+    isInternal: boolean = false
+  ) => {
+    try {
+      const response = await api.post(
+        `/api/v1/proposals/${proposalId}/comments/`,
+        {
+          text,
+          is_internal: isInternal,
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error('Erro ao adicionar comentário à proposta:', error)
       throw error
     }
   },

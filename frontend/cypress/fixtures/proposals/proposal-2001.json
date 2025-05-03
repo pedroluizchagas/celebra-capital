@@ -1,0 +1,70 @@
+{
+  "id": 2001,
+  "user": {
+    "id": 42,
+    "name": "Cliente Teste",
+    "email": "cliente@teste.com"
+  },
+  "credit_type": "personal",
+  "amount_requested": 300000,
+  "installments": 36,
+  "status": "pending",
+  "potential_rating": "medium",
+  "interest_rate": null,
+  "amount_approved": null,
+  "installment_value": null,
+  "created_at": "2023-11-05T15:30:00",
+  "updated_at": "2023-11-05T15:30:00",
+  "company_info": {
+    "razao_social": "Empresa Teste LTDA",
+    "cnpj": "12.345.678/0001-90",
+    "segmento": "tecnologia",
+    "tempo_existencia": 5
+  },
+  "financial_info": {
+    "faturamento_anual": 1200000,
+    "faturamento_mensal": 100000,
+    "margem_lucro": 25,
+    "endividamento": 15000
+  },
+  "credit_info": {
+    "finalidade": "expansao",
+    "garantias": ["imovel", "recebivel"],
+    "historico_credito": "bom"
+  },
+  "documents": [
+    {
+      "id": 301,
+      "type": "documentos_contabeis",
+      "filename": "balanco_2023.pdf",
+      "uploaded_at": "2023-11-05T15:30:00",
+      "status": "valid"
+    }
+  ],
+  "comments": [
+    {
+      "id": 105,
+      "author": {
+        "id": 8,
+        "name": "Ricardo Gomes",
+        "role": "analyst"
+      },
+      "text": "Documentação inicial recebida. Análise preliminar pendente.",
+      "is_internal": true,
+      "created_at": "2023-11-05T16:45:00"
+    }
+  ],
+  "status_changes": [
+    {
+      "id": 251,
+      "previous_status": null,
+      "new_status": "pending",
+      "changed_by": {
+        "id": 42,
+        "name": "Cliente Teste"
+      },
+      "reason": "Criação da proposta",
+      "created_at": "2023-11-05T15:30:00"
+    }
+  ]
+}

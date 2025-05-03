@@ -1,276 +1,164 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { Container, Typography, Paper, Box, Button, Alert } from '@mui/material'
+import ClickSignComponent from '../components/ClickSignComponent'
+import * as analyticsService from '../services/analytics'
 import proposalService from '../services/proposalService'
 
-interface SignatureProps {}
+interface ProposalData {
+  id: number
+  proposal_number: string
+  credit_type: string
+  credit_value: number
+  status: string
+}
 
-const Signature: React.FC<SignatureProps> = () => {
-  const location = useLocation()
+const Signature: React.FC = () => {
+  const { proposalId } = useParams<{ proposalId: string }>()
+  const [proposal, setProposal] = useState<ProposalData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [isDrawing, setIsDrawing] = useState(false)
-  const [hasSignature, setHasSignature] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [agreedToTerms, setAgreedToTerms] = useState(false)
 
-  // Receber dados das etapas anteriores
-  const formAnswers = location.state?.answers || {}
-  const documents = location.state?.documents || []
-  const proposalId = location.state?.proposalId || null
-
-  // Configurar o canvas quando o componente for montado
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    // Definir a largura e altura do canvas para corresponder ao tamanho do elemento
-    canvas.width = canvas.offsetWidth
-    canvas.height = canvas.offsetHeight
-
-    // Configurar o estilo do traço
-    ctx.lineWidth = 2
-    ctx.lineCap = 'round'
-    ctx.strokeStyle = '#0111a2' // cor da Celebra
-  }, [])
-
-  const startDrawing = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
-  ) => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    setIsDrawing(true)
-
-    // Obter as coordenadas do mouse ou toque
-    let clientX, clientY
-
-    if ('touches' in e) {
-      // É um evento de toque
-      clientX = e.touches[0].clientX
-      clientY = e.touches[0].clientY
-    } else {
-      // É um evento de mouse
-      clientX = e.clientX
-      clientY = e.clientY
-    }
-
-    // Obter a posição relativa ao canvas
-    const rect = canvas.getBoundingClientRect()
-    const x = clientX - rect.left
-    const y = clientY - rect.top
-
-    ctx.beginPath()
-    ctx.moveTo(x, y)
-  }
-
-  const draw = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
-  ) => {
-    if (!isDrawing) return
-
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    // Obter as coordenadas do mouse ou toque
-    let clientX, clientY
-
-    if ('touches' in e) {
-      // É um evento de toque
-      clientX = e.touches[0].clientX
-      clientY = e.touches[0].clientY
-
-      // Evitar rolagem da tela enquanto desenha
-      e.preventDefault()
-    } else {
-      // É um evento de mouse
-      clientX = e.clientX
-      clientY = e.clientY
-    }
-
-    // Obter a posição relativa ao canvas
-    const rect = canvas.getBoundingClientRect()
-    const x = clientX - rect.left
-    const y = clientY - rect.top
-
-    ctx.lineTo(x, y)
-    ctx.stroke()
-
-    setHasSignature(true)
-  }
-
-  const stopDrawing = () => {
-    setIsDrawing(false)
-  }
-
-  const clearSignature = () => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    setHasSignature(false)
-  }
-
-  const getSignatureImage = (): string => {
-    const canvas = canvasRef.current
-    if (!canvas) return ''
-
-    return canvas.toDataURL('image/png')
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!hasSignature) {
-      alert('Por favor, assine o documento antes de continuar.')
-      return
-    }
-
-    if (!agreedToTerms) {
-      alert('Por favor, aceite os termos e condições para continuar.')
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      // Obter a imagem da assinatura
-      const signatureImage = getSignatureImage()
-
-      if (proposalId) {
-        // Enviar assinatura para o backend
-        await proposalService.submitSignature(proposalId, signatureImage)
+    const fetchProposal = async () => {
+      if (!proposalId) {
+        setError('ID da proposta não fornecido')
+        setLoading(false)
+        return
       }
 
-      navigate('/success', {
-        state: {
-          answers: formAnswers,
-          documents,
-          proposalId,
-          signed: true,
-        },
-      })
-    } catch (error) {
-      console.error('Erro ao enviar assinatura:', error)
-      alert(
-        'Ocorreu um erro ao enviar sua assinatura. Por favor, tente novamente.'
-      )
-    } finally {
-      setIsLoading(false)
+      try {
+        setLoading(true)
+        const proposalData = await proposalService.getProposalDetails(
+          parseInt(proposalId)
+        )
+        setProposal(proposalData)
+        setError(null)
+
+        // Rastrear visualização da página
+        analyticsService.trackPageView('Assinatura', window.location.pathname)
+      } catch (err) {
+        console.error('Erro ao carregar proposta:', err)
+        setError(
+          'Não foi possível carregar os detalhes da proposta. Tente novamente.'
+        )
+        analyticsService.trackError(
+          'Erro ao carregar proposta',
+          undefined,
+          'SignaturePage'
+        )
+      } finally {
+        setLoading(false)
+      }
     }
+
+    fetchProposal()
+  }, [proposalId])
+
+  const handleSignatureComplete = () => {
+    // Atualizar o status da proposta localmente
+    if (proposal) {
+      setProposal({
+        ...proposal,
+        status: 'signed',
+      })
+    }
+
+    // Rastrear conclusão de assinatura
+    analyticsService.trackSignatureComplete()
+  }
+
+  const handleError = (errorMessage: string) => {
+    setError(errorMessage)
+    analyticsService.trackError(errorMessage, undefined, 'SignaturePage')
+  }
+
+  const handleBackToProposal = () => {
+    navigate(`/propostas/${proposalId}`)
+  }
+
+  if (loading) {
+    return (
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Typography variant="h6" align="center" sx={{ my: 4 }}>
+          Carregando informações de assinatura...
+        </Typography>
+      </Container>
+    )
+  }
+
+  if (error || !proposal) {
+    return (
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Alert severity="error" sx={{ my: 4 }}>
+          {error || 'Erro ao carregar proposta'}
+        </Alert>
+        <Box sx={{ textAlign: 'center', mt: 3 }}>
+          <Button variant="outlined" onClick={() => navigate('/')}>
+            Voltar para a página inicial
+          </Button>
+        </Box>
+      </Container>
+    )
   }
 
   return (
-    <div className="card p-8 max-w-md mx-auto">
-      <h2 className="text-xl font-semibold mb-6">Assinatura Digital</h2>
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Paper elevation={3} sx={{ p: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Assinatura Digital
+        </Typography>
 
-      <p className="text-gray-600 dark:text-gray-300 mb-6">
-        Por favor, assine abaixo para confirmar sua solicitação de crédito.
-      </p>
+        <Box sx={{ my: 3 }}>
+          <Typography variant="subtitle1" color="text.secondary">
+            Proposta: #{proposal.proposal_number}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Tipo de Crédito: {proposal.credit_type}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Valor: R${' '}
+            {proposal.credit_value.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+            })}
+          </Typography>
+        </Box>
 
-      <form onSubmit={handleSubmit}>
-        <div className="mb-6">
-          <div className="border-2 border-gray-300 rounded-lg p-1 mb-2">
-            <canvas
-              ref={canvasRef}
-              width={500}
-              height={200}
-              className="w-full h-40 bg-white dark:bg-gray-800 touch-none"
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
-              onTouchStart={startDrawing}
-              onTouchMove={draw}
-              onTouchEnd={stopDrawing}
-            />
-          </div>
+        <Box sx={{ my: 4 }}>
+          <ClickSignComponent
+            proposalId={proposal.id}
+            onSignComplete={handleSignatureComplete}
+            onError={handleError}
+            trackEvent={(eventName, data) =>
+              analyticsService.trackEvent(eventName as any, data)
+            }
+            trackSignatureComplete={analyticsService.trackSignatureComplete}
+            trackError={analyticsService.trackError}
+          />
+        </Box>
 
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={clearSignature}
-              className="text-sm text-celebra-blue dark:text-celebra-blue"
-            >
-              Limpar assinatura
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-8">
-          <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800 text-sm text-gray-600 dark:text-gray-300">
-            <h3 className="font-semibold mb-2">Termos e Condições</h3>
-            <p className="mb-2">
-              Ao assinar este documento, você concorda com os seguintes termos:
-            </p>
-            <ul className="list-disc pl-5 mb-4 space-y-1">
-              <li>
-                Autorizo a Celebra Capital a verificar meus dados financeiros.
-              </li>
-              <li>
-                Confirmo que todas as informações fornecidas são verdadeiras.
-              </li>
-              <li>
-                Entendo que a assinatura digital tem o mesmo valor legal que a
-                assinatura física.
-              </li>
-              <li>
-                Aceito receber comunicações sobre a minha solicitação de
-                crédito.
-              </li>
-            </ul>
-
-            <div className="flex items-center mt-4">
-              <input
-                type="checkbox"
-                id="termsCheckbox"
-                checked={agreedToTerms}
-                onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="h-4 w-4 text-celebra-blue focus:ring-celebra-blue rounded"
-              />
-              <label
-                htmlFor="termsCheckbox"
-                className="ml-2 text-gray-700 dark:text-gray-300"
-              >
-                Li e concordo com os termos e condições
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 flex justify-between">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Button
+            variant="outlined"
+            onClick={handleBackToProposal}
+            sx={{ mr: 2 }}
           >
-            Voltar
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading || !hasSignature || !agreedToTerms}
-            className={`btn-primary ${
-              !hasSignature || !agreedToTerms
-                ? 'opacity-50 cursor-not-allowed'
-                : ''
-            }`}
-          >
-            {isLoading ? 'Enviando...' : 'Finalizar'}
-          </button>
-        </div>
-      </form>
-    </div>
+            Voltar para Proposta
+          </Button>
+          <Button variant="outlined" onClick={() => navigate('/')}>
+            Ir para Página Inicial
+          </Button>
+        </Box>
+      </Paper>
+
+      <Box sx={{ mt: 3, textAlign: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          A assinatura digital tem validade jurídica garantida por lei. Em caso
+          de dúvidas, entre em contato com nosso suporte.
+        </Typography>
+      </Box>
+    </Container>
   )
 }
 

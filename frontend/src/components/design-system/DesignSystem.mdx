@@ -1,0 +1,82 @@
+import { Meta } from '@storybook/blocks'
+
+<Meta title="Design System/Introdução" />
+
+# Design System da Celebra Capital
+
+Bem-vindo à documentação do Design System da Celebra Capital. Este sistema fornece componentes, tokens e diretrizes para construir interfaces consistentes e acessíveis para nossos usuários.
+
+## Princípios de Design
+
+Nossa abordagem de design é orientada pelos seguintes princípios:
+
+- **Clareza**: Interfaces simples e diretas para melhor compreensão
+- **Consistência**: Experiência visual e interativa uniforme em toda a plataforma
+- **Acessibilidade**: Conformidade com WCAG AA para garantir que todos possam usar nossos produtos
+- **Eficiência**: Fluxos otimizados para completar tarefas rapidamente
+- **Confiabilidade**: Design que transmite segurança e profissionalismo
+
+## Tokens de Design
+
+Os tokens são as unidades fundamentais do nosso sistema de design. Eles definem valores consistentes para:
+
+- **Cores**: Paleta principal, secundária e tons neutros
+- **Tipografia**: Famílias de fontes, tamanhos e pesos
+- **Espaçamento**: Sistema de grid e espaçamento entre elementos
+- **Bordas e arredondamentos**: Definições de bordas e raios
+- **Sombras**: Níveis de elevação através de sombras
+
+Todos os tokens estão implementados como variáveis CSS e constantes TypeScript, disponíveis em `src/styles/tokens.ts`.
+
+## Componentes Principais
+
+O Design System inclui componentes reutilizáveis, cada um com variações, estados e propriedades documentadas:
+
+- **Button**: Diferentes variantes para ações primárias, secundárias e terciárias
+- **Card**: Contêineres para agrupar informações relacionadas
+- **Typography**: Componentes para textos com estilos predefinidos
+- **Form Inputs**: Campos de entrada, selects, checkboxes, etc.
+- **Feedback**: Componentes para alertas, notificações e mensagens de erro
+- **Navigation**: Menus, tabs, breadcrumbs, etc.
+
+## Guia de Uso
+
+Para usar os componentes do Design System:
+
+```tsx
+import { Button, Card } from 'src/components/design-system'
+
+function MyComponent() {
+  return (
+    <Card variant="elevated">
+      <h2>Título do Card</h2>
+      <p>Conteúdo do card...</p>
+      <Button variant="primary">Continuar</Button>
+    </Card>
+  )
+}
+```
+
+## Acessibilidade
+
+Todos os componentes são desenvolvidos com acessibilidade em mente:
+
+- Suporte adequado para navegação por teclado
+- Rótulos apropriados para leitores de tela
+- Contraste de cores em conformidade com WCAG AA
+- Estados de foco visíveis e claros
+- Atributos ARIA quando necessário
+
+## Contribuindo
+
+Para adicionar ou modificar componentes:
+
+1. Siga os padrões de nome e estrutura existentes
+2. Escreva uma documentação clara para props e variantes
+3. Adicione stories para todos os estados e variantes
+4. Garanta que o componente seja acessível
+5. Adicione testes para comportamentos esperados
+
+## Evolução do Design System
+
+Este Design System é um trabalho em andamento. A cada sprint, novos componentes são adicionados e os existentes são refinados com base no feedback dos usuários e nas necessidades do produto.

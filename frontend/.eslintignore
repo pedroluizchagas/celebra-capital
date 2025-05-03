@@ -1,0 +1,23 @@
+# Dependências
+node_modules
+.pnp
+.pnp.js
+
+# Build e distribuição
+dist/
+build/
+coverage/
+
+# Arquivos de cache
+.eslintcache
+.npm
+.yarn
+
+# Outros
+.DS_Store
+*.log
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local 

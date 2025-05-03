@@ -1,0 +1,13 @@
+{
+  "name": "celebra-capital-scripts",
+  "version": "1.0.0",
+  "description": "Scripts utilitários para a plataforma Celebra Capital",
+  "private": true,
+  "scripts": {
+    "generate-icons": "node generate-icons.js"
+  },
+  "dependencies": {
+    "canvas": "^2.11.2",
+    "chalk": "^4.1.2"
+  }
+}

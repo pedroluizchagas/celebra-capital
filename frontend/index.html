@@ -2,25 +2,183 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.ico" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <meta name="theme-color" content="#0111a2" />
     <meta
       name="description"
-      content="Celebra Capital - Plataforma de Pré-Análise de Crédito"
+      content="Plataforma de Pré-Análise de Crédito para Servidores Públicos. Obtenha as melhores taxas de crédito consignado e personal"
     />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta
+      name="keywords"
+      content="crédito consignado, empréstimo, servidor público, análise de crédito, consignado digital"
+    />
+    <meta name="author" content="Celebra Capital" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Meta tags para Open Graph (Facebook) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.celebracapital.com.br/" />
+    <meta
+      property="og:title"
+      content="Celebra Capital - Crédito Inteligente para Servidores"
+    />
+    <meta
+      property="og:description"
+      content="Pré-Análise de Crédito digital e rápida para Servidores Públicos. Obtenha as melhores taxas e condições no mercado."
+    />
+    <meta
+      property="og:image"
+      content="https://www.celebracapital.com.br/social-image.jpg"
+    />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="Celebra Capital" />
+
+    <!-- Meta tags para Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://www.celebracapital.com.br/" />
+    <meta
+      name="twitter:title"
+      content="Celebra Capital - Crédito Inteligente para Servidores"
+    />
+    <meta
+      name="twitter:description"
+      content="Pré-Análise de Crédito digital e rápida para Servidores Públicos. Obtenha as melhores taxas e condições no mercado."
+    />
+    <meta
+      name="twitter:image"
+      content="https://www.celebracapital.com.br/social-image.jpg"
+    />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.celebracapital.com.br/" />
+
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <!-- Meta tags adicionais para PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Celebra Crédito" />
+
+    <!-- Manifest para PWA -->
     <link rel="manifest" href="/manifest.json" />
+
+    <!-- Preconnect para recursos externos -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Prefetch domínios frequentes -->
+    <link rel="dns-prefetch" href="https://api.celebracapital.com.br/" />
+
+    <!-- Font Google -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <title>Celebra Capital - Crédito para Servidores</title>
+
+    <title>Celebra Capital - Crédito Inteligente para Servidores</title>
+
+    <!-- Microdata estruturado (Schema.org) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FinancialService",
+        "name": "Celebra Capital",
+        "url": "https://www.celebracapital.com.br",
+        "logo": "https://www.celebracapital.com.br/icons/pwa-192x192.png",
+        "description": "Plataforma especializada em pré-análise de crédito para servidores públicos.",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Av. Paulista, 1000, Sala 301",
+          "addressLocality": "São Paulo",
+          "addressRegion": "SP",
+          "postalCode": "01310-100",
+          "addressCountry": "BR"
+        },
+        "telephone": "+551140028922",
+        "openingHours": "Mo,Tu,We,Th,Fr 09:00-18:00",
+        "sameAs": [
+          "https://www.facebook.com/celebracapital",
+          "https://www.instagram.com/celebracapital",
+          "https://www.linkedin.com/company/celebracapital"
+        ]
+      }
+    </script>
+
+    <!-- Script de otimização de performance -->
+    <script src="/performance.js" defer></script>
+
+    <!-- PWA Utils - scripts em ordem específica para garantir dependências -->
+    <script src="/cache-manager.js" defer></script>
+    <script src="/pwa-utils.js" defer></script>
+    <script src="/push-notifications.js" defer></script>
+    <script src="/background-sync.js" defer></script>
+    <script src="/pwa-install-banner.js" defer></script>
+
+    <!-- Google Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || []
+      function gtag() {
+        dataLayer.push(arguments)
+      }
+      gtag('js', new Date())
+
+      // Configuração principal
+      gtag('config', 'G-XXXXXXXXXX', {
+        send_page_view: false, // Controlaremos page views manualmente
+        cookie_flags: 'secure;samesite=strict',
+        anonymize_ip: true,
+      })
+
+      // Inicializa ID de sessão
+      if (!sessionStorage.getItem('session_id')) {
+        const sessionId = 'sess_' + Math.random().toString(36).substring(2, 15)
+        sessionStorage.setItem('session_id', sessionId)
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <!-- Mensagem de fallback para JavaScript desabilitado -->
+    <noscript>
+      <div style="padding: 20px; text-align: center">
+        Para utilizar a plataforma da Celebra Capital, é necessário habilitar o
+        JavaScript no seu navegador.
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Notificação de PWA -->
+    <div id="pwa-install-prompt" class="hidden">
+      <div class="pwa-prompt-content">
+        <p>Instale nosso app para uma experiência melhor</p>
+        <div class="pwa-buttons">
+          <button id="pwa-install-button">Instalar</button>
+          <button id="pwa-dismiss-button">Agora não</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Script de registro de PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/service-worker.js')
+            .then((reg) => console.log('Service worker registrado', reg))
+            .catch((err) =>
+              console.error('Erro ao registrar service worker', err)
+            )
+        })
+      }
+    </script>
   </body>
 </html>

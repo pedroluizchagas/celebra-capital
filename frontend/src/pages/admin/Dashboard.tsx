@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from 'react'
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import proposalService from '../../services/proposalService'
-
-interface DashboardStats {
-  total_proposals: number
-  pending_review: number
-  approved: number
-  rejected: number
-  recent_submissions: number
-}
+import dashboardService, {
+  DashboardStats,
+  ActivityItem,
+  RecentProposal,
+} from '../../services/dashboardService'
+import StatsCards from '../../components/dashboard/StatsCards'
+import ProposalList from '../../components/dashboard/ProposalList'
+import ActivityList from '../../components/dashboard/ActivityList'
+import StatsChart from '../../components/dashboard/StatsChart'
+import NotificationIcon from '../../components/notifications/NotificationIcon'
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [recentProposals, setRecentProposals] = useState<RecentProposal[]>([])
+  const [activities, setActivities] = useState<ActivityItem[]>([])
+  const [chartData, setChartData] = useState<
+    { labels: string[]; values: number[] } | undefined
+  >(undefined)
   const [isLoading, setIsLoading] = useState(true)
 
   // Verificar o caminho atual para destacar a navegação
@@ -24,30 +30,48 @@ const AdminDashboard: React.FC = () => {
   }
 
   useEffect(() => {
-    const fetchDashboardStats = async () => {
+    const fetchDashboardData = async () => {
       setIsLoading(true)
       try {
-        // Em uma implementação real, teríamos um endpoint específico para estatísticas
-        // Por enquanto, vamos simular com dados fixos
+        // Carregar todos os dados do dashboard em paralelo
+        const [statsData, proposalsData, activitiesData] = await Promise.all([
+          dashboardService.getStats(),
+          dashboardService.getRecentProposals(),
+          dashboardService.getRecentActivities(),
+        ])
 
-        // Simulação de chamada API
-        await new Promise((resolve) => setTimeout(resolve, 500))
+        setStats(statsData)
+        setRecentProposals(proposalsData)
+        setActivities(activitiesData)
 
-        setStats({
-          total_proposals: 125,
-          pending_review: 42,
-          approved: 68,
-          rejected: 15,
-          recent_submissions: 8,
-        })
+        // Simular dados para o gráfico baseado nas propostas mensais
+        // Em uma implementação real, esses dados viriam da API
+        const monthlyData = {
+          labels: [
+            'Jan',
+            'Fev',
+            'Mar',
+            'Abr',
+            'Mai',
+            'Jun',
+            'Jul',
+            'Ago',
+            'Set',
+            'Out',
+            'Nov',
+            'Dez',
+          ],
+          values: [12, 19, 15, 8, 22, 14, 11, 18, 20, 24, 16, 25],
+        }
+        setChartData(monthlyData)
       } catch (error) {
-        console.error('Erro ao carregar estatísticas do dashboard:', error)
+        console.error('Erro ao carregar dados do dashboard:', error)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchDashboardStats()
+    fetchDashboardData()
   }, [])
 
   return (
@@ -239,25 +263,8 @@ const AdminDashboard: React.FC = () => {
                 : 'Visão Geral'}
             </h2>
             <div className="flex items-center">
-              <button
-                type="button"
-                className="mr-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  />
-                </svg>
-              </button>
-              <div className="relative">
+              <NotificationIcon />
+              <div className="relative ml-4">
                 <button
                   type="button"
                   className="flex items-center text-sm focus:outline-none"
@@ -277,388 +284,53 @@ const AdminDashboard: React.FC = () => {
           {/* Mostrar o Outlet para as rotas aninhadas ou o conteúdo padrão do dashboard */}
           {location.pathname === '/admin' ? (
             <>
-              {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 animate-pulse"
-                    >
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                    </div>
-                  ))}
+              {/* Cards de Estatísticas */}
+              <StatsCards stats={stats} isLoading={isLoading} />
+
+              {/* Gráfico e Listas */}
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Gráfico de Estatísticas */}
+                <div className="lg:col-span-2">
+                  <StatsChart isLoading={isLoading} chartData={chartData} />
                 </div>
-              ) : (
-                <>
-                  {/* Cards de Estatísticas */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                      <div className="flex items-center">
-                        <div className="p-3 rounded-full bg-blue-500 bg-opacity-10 text-blue-500 mr-4">
-                          <svg
-                            className="w-6 h-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Total de Propostas
-                          </p>
-                          <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                            {stats?.total_proposals || 0}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                      <div className="flex items-center">
-                        <div className="p-3 rounded-full bg-yellow-500 bg-opacity-10 text-yellow-500 mr-4">
-                          <svg
-                            className="w-6 h-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Aguardando Análise
-                          </p>
-                          <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                            {stats?.pending_review || 0}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                      <div className="flex items-center">
-                        <div className="p-3 rounded-full bg-green-500 bg-opacity-10 text-green-500 mr-4">
-                          <svg
-                            className="w-6 h-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Aprovadas
-                          </p>
-                          <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                            {stats?.approved || 0}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                      <div className="flex items-center">
-                        <div className="p-3 rounded-full bg-red-500 bg-opacity-10 text-red-500 mr-4">
-                          <svg
-                            className="w-6 h-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Rejeitadas
-                          </p>
-                          <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                            {stats?.rejected || 0}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                {/* Atividades Recentes */}
+                <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 className="font-semibold text-gray-800 dark:text-white">
+                      Atividades Recentes
+                    </h3>
                   </div>
-
-                  {/* Seções Principais */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Propostas Recentes */}
-                    <div className="lg:col-span-2 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-                      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                        <h3 className="font-semibold text-gray-800 dark:text-white">
-                          Propostas Recentes
-                        </h3>
-                        <button
-                          onClick={() => navigate('/admin/proposals')}
-                          className="text-sm text-celebra-blue hover:underline"
-                        >
-                          Ver todas
-                        </button>
-                      </div>
-                      <div className="p-4">
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full">
-                            <thead>
-                              <tr className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                <th className="px-4 py-2">ID</th>
-                                <th className="px-4 py-2">Cliente</th>
-                                <th className="px-4 py-2">Valor</th>
-                                <th className="px-4 py-2">Status</th>
-                                <th className="px-4 py-2">Data</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                              {[
-                                {
-                                  id: 'P-2023-421',
-                                  client: 'Carlos Oliveira',
-                                  value: 'R$ 12.000,00',
-                                  status: 'Pendente',
-                                  statusColor: 'yellow',
-                                  date: '18/07/2023',
-                                },
-                                {
-                                  id: 'P-2023-420',
-                                  client: 'Maria Silva',
-                                  value: 'R$ 25.000,00',
-                                  status: 'Aprovada',
-                                  statusColor: 'green',
-                                  date: '17/07/2023',
-                                },
-                                {
-                                  id: 'P-2023-419',
-                                  client: 'João Santos',
-                                  value: 'R$ 5.000,00',
-                                  status: 'Rejeitada',
-                                  statusColor: 'red',
-                                  date: '15/07/2023',
-                                },
-                                {
-                                  id: 'P-2023-418',
-                                  client: 'Ana Costa',
-                                  value: 'R$ 18.500,00',
-                                  status: 'Pendente',
-                                  statusColor: 'yellow',
-                                  date: '15/07/2023',
-                                },
-                                {
-                                  id: 'P-2023-417',
-                                  client: 'Pedro Almeida',
-                                  value: 'R$ 30.000,00',
-                                  status: 'Aprovada',
-                                  statusColor: 'green',
-                                  date: '14/07/2023',
-                                },
-                              ].map((proposal, index) => (
-                                <tr
-                                  key={index}
-                                  className="hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
-                                >
-                                  <td className="px-4 py-3 whitespace-nowrap text-blue-500">
-                                    <button
-                                      onClick={() =>
-                                        navigate(
-                                          `/admin/proposals/${proposal.id}`
-                                        )
-                                      }
-                                      className="hover:underline"
-                                    >
-                                      {proposal.id}
-                                    </button>
-                                  </td>
-                                  <td className="px-4 py-3 whitespace-nowrap">
-                                    {proposal.client}
-                                  </td>
-                                  <td className="px-4 py-3 whitespace-nowrap">
-                                    {proposal.value}
-                                  </td>
-                                  <td className="px-4 py-3 whitespace-nowrap">
-                                    <span
-                                      className={`px-2 py-1 rounded-full text-xs 
-                                      ${
-                                        proposal.statusColor === 'green'
-                                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                          : proposal.statusColor === 'yellow'
-                                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                                      }`}
-                                    >
-                                      {proposal.status}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3 whitespace-nowrap">
-                                    {proposal.date}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Atividades Recentes */}
-                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-                      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="font-semibold text-gray-800 dark:text-white">
-                          Atividades Recentes
-                        </h3>
-                      </div>
-                      <div className="p-4">
-                        <ul className="space-y-4">
-                          {[
-                            {
-                              action: 'Proposta aprovada',
-                              description: 'Proposta P-2023-410 foi aprovada',
-                              time: '2 horas atrás',
-                              icon: (
-                                <svg
-                                  className="w-5 h-5 text-green-500"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              ),
-                            },
-                            {
-                              action: 'Novo usuário',
-                              description: 'José Silva criou uma nova conta',
-                              time: '4 horas atrás',
-                              icon: (
-                                <svg
-                                  className="w-5 h-5 text-blue-500"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                                  />
-                                </svg>
-                              ),
-                            },
-                            {
-                              action: 'Documentos enviados',
-                              description:
-                                'Maria Santos enviou novos documentos',
-                              time: '6 horas atrás',
-                              icon: (
-                                <svg
-                                  className="w-5 h-5 text-purple-500"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                  />
-                                </svg>
-                              ),
-                            },
-                            {
-                              action: 'Proposta rejeitada',
-                              description: 'Proposta P-2023-405 foi rejeitada',
-                              time: '1 dia atrás',
-                              icon: (
-                                <svg
-                                  className="w-5 h-5 text-red-500"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                  />
-                                </svg>
-                              ),
-                            },
-                            {
-                              action: 'Nova proposta',
-                              description:
-                                'Carlos Ferreira enviou nova proposta',
-                              time: '1 dia atrás',
-                              icon: (
-                                <svg
-                                  className="w-5 h-5 text-yellow-500"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                  />
-                                </svg>
-                              ),
-                            },
-                          ].map((activity, index) => (
-                            <li key={index} className="flex items-start">
-                              <div className="flex-shrink-0 mt-1">
-                                {activity.icon}
-                              </div>
-                              <div className="ml-3">
-                                <p className="text-sm font-medium text-gray-800 dark:text-white">
-                                  {activity.action}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {activity.description}
-                                </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                  {activity.time}
-                                </p>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
+                  <div className="p-4">
+                    <ActivityList
+                      activities={activities}
+                      isLoading={isLoading}
+                    />
                   </div>
-                </>
-              )}
+                </div>
+              </div>
+
+              {/* Propostas Recentes */}
+              <div className="mt-6 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                  <h3 className="font-semibold text-gray-800 dark:text-white">
+                    Propostas Recentes
+                  </h3>
+                  <button
+                    onClick={() => navigate('/admin/proposals')}
+                    className="text-sm text-celebra-blue hover:underline"
+                  >
+                    Ver todas
+                  </button>
+                </div>
+                <div className="p-4">
+                  <ProposalList
+                    proposals={recentProposals}
+                    isLoading={isLoading}
+                    showViewAll={false}
+                  />
+                </div>
+              </div>
             </>
           ) : (
             <Outlet />

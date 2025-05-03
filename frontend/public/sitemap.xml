@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+                            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+  <!-- Página Inicial -->
+  <url>
+    <loc>https://www.celebracapital.com.br/</loc>
+    <lastmod>2025-04-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Páginas Institucionais -->
+  <url>
+    <loc>https://www.celebracapital.com.br/sobre</loc>
+    <lastmod>2025-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.celebracapital.com.br/contato</loc>
+    <lastmod>2025-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.celebracapital.com.br/termos-de-uso</loc>
+    <lastmod>2025-03-20</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://www.celebracapital.com.br/politica-de-privacidade</loc>
+    <lastmod>2025-03-20</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Páginas de Produtos e Serviços -->
+  <url>
+    <loc>https://www.celebracapital.com.br/credito-consignado</loc>
+    <lastmod>2025-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://www.celebracapital.com.br/assets/images/credito-consignado.webp</image:loc>
+      <image:title>Crédito Consignado para Servidores</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://www.celebracapital.com.br/credito-pessoal</loc>
+    <lastmod>2025-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://www.celebracapital.com.br/assets/images/credito-pessoal.webp</image:loc>
+      <image:title>Crédito Pessoal com Condições Especiais</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://www.celebracapital.com.br/portabilidade</loc>
+    <lastmod>2025-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://www.celebracapital.com.br/assets/images/portabilidade.webp</image:loc>
+      <image:title>Portabilidade de Crédito</image:title>
+    </image:image>
+  </url>
+
+  <!-- Páginas de Blog -->
+  <url>
+    <loc>https://www.celebracapital.com.br/blog</loc>
+    <lastmod>2025-04-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.celebracapital.com.br/blog/entenda-como-funciona-credito-consignado</loc>
+    <lastmod>2025-04-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <news:news>
+      <news:publication>
+        <news:name>Blog Celebra Capital</news:name>
+        <news:language>pt</news:language>
+      </news:publication>
+      <news:publication_date>2025-04-20</news:publication_date>
+      <news:title>Entenda como funciona o crédito consignado</news:title>
+    </news:news>
+  </url>
+
+  <url>
+    <loc>https://www.celebracapital.com.br/blog/dicas-para-organizar-financas-pessoais</loc>
+    <lastmod>2025-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <news:news>
+      <news:publication>
+        <news:name>Blog Celebra Capital</news:name>
+        <news:language>pt</news:language>
+      </news:publication>
+      <news:publication_date>2025-04-18</news:publication_date>
+      <news:title>Dicas para organizar suas finanças pessoais</news:title>
+    </news:news>
+  </url>
+
+  <!-- Área de Login e Principais Funcionalidades -->
+  <url>
+    <loc>https://www.celebracapital.com.br/login</loc>
+    <lastmod>2025-04-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.celebracapital.com.br/cadastro</loc>
+    <lastmod>2025-04-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Página de FAQ -->
+  <url>
+    <loc>https://www.celebracapital.com.br/faq</loc>
+    <lastmod>2025-04-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset> 

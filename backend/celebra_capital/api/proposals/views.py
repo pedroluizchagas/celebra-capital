@@ -1,7 +1,11 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Proposal, ProposalAnswer, Signature
+from .models import Proposal, ProposalAnswer, Signature, ProposalComment, ProposalStatusChange
+from .serializers import (
+    ProposalListSerializer, ProposalDetailSerializer, ProposalCreateSerializer, 
+    ProposalUpdateSerializer, ProposalCommentSerializer, ProposalStatusChangeSerializer
+)
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.http import HttpResponse
@@ -16,27 +20,117 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 import datetime
 import json
+from django.shortcuts import get_object_or_404
 from ..notifications.services import NotificationService
 
 # Implementações de views serão adicionadas posteriormente
 
 class ProposalListCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
     def get(self, request):
-        # Implementação futura
-        return Response({"detail": "Endpoint em desenvolvimento"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        if request.user.is_staff:
+            # Administradores veem todas as propostas
+            proposals = Proposal.objects.all()
+        else:
+            # Usuários comuns veem apenas suas próprias propostas
+            proposals = Proposal.objects.filter(user=request.user)
+        
+        # Aplicar filtros se fornecidos
+        status_filter = request.query_params.get('status')
+        if status_filter:
+            proposals = proposals.filter(status=status_filter)
+            
+        credit_type_filter = request.query_params.get('credit_type')
+        if credit_type_filter:
+            proposals = proposals.filter(credit_type=credit_type_filter)
+        
+        # Ordenar por data de criação (mais recente primeiro)
+        proposals = proposals.order_by('-created_at')
+        
+        serializer = ProposalListSerializer(proposals, many=True)
+        return Response(serializer.data)
     
     def post(self, request):
-        # Implementação futura
-        return Response({"detail": "Endpoint em desenvolvimento"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        # Adicionar o user_id ao request se não for fornecido
+        if 'user_id' not in request.data:
+            request.data['user_id'] = request.user.id
+            
+        serializer = ProposalCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            proposal = serializer.save()
+            
+            # Retornar a proposta criada
+            return Response(ProposalDetailSerializer(proposal).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ProposalDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
     def get(self, request, pk):
-        # Implementação futura
-        return Response({"detail": "Endpoint em desenvolvimento"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        try:
+            proposal = self._get_proposal(pk, request.user)
+            serializer = ProposalDetailSerializer(proposal)
+            return Response(serializer.data)
+        except Proposal.DoesNotExist:
+            return Response(
+                {"detail": "Proposta não encontrada ou você não tem permissão para visualizá-la."},
+                status=status.HTTP_404_NOT_FOUND
+            )
     
     def put(self, request, pk):
-        # Implementação futura
-        return Response({"detail": "Endpoint em desenvolvimento"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        try:
+            proposal = self._get_proposal(pk, request.user)
+            
+            # Apenas administradores podem atualizar propostas
+            if not request.user.is_staff:
+                return Response(
+                    {"detail": "Você não tem permissão para atualizar esta proposta."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Armazenar o status anterior para rastrear alterações
+            previous_status = proposal.status
+            
+            serializer = ProposalUpdateSerializer(proposal, data=request.data, partial=True)
+            if serializer.is_valid():
+                updated_proposal = serializer.save()
+                
+                # Se houve mudança de status, criar um registro
+                if 'status' in request.data and previous_status != updated_proposal.status:
+                    # Criar registro de mudança de status
+                    status_change = ProposalStatusChange.objects.create(
+                        proposal=proposal,
+                        previous_status=previous_status,
+                        new_status=updated_proposal.status,
+                        changed_by=request.user,
+                        reason=request.data.get('reason', '')
+                    )
+                    
+                    # Enviar notificação para o cliente
+                    notification_service = NotificationService()
+                    notification_service.send_status_change_notification(
+                        proposal.user,
+                        proposal,
+                        previous_status,
+                        updated_proposal.status
+                    )
+                
+                return Response(ProposalDetailSerializer(updated_proposal).data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Proposal.DoesNotExist:
+            return Response(
+                {"detail": "Proposta não encontrada ou você não tem permissão para atualizá-la."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    def _get_proposal(self, pk, user):
+        if user.is_staff:
+            # Administradores podem ver qualquer proposta
+            return Proposal.objects.get(pk=pk)
+        else:
+            # Usuários comuns só podem ver suas próprias propostas
+            return Proposal.objects.get(pk=pk, user=user)
 
 class ProposalAnswersView(APIView):
     def post(self, request, proposal_id):
@@ -457,127 +551,254 @@ def export_report(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+class ProposalCommentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, proposal_id):
+        try:
+            # Verificar se o usuário tem acesso à proposta
+            proposal = self._get_proposal(proposal_id, request.user)
+            
+            # Filtrar comentários com base nas permissões
+            if request.user.is_staff:
+                # Administradores veem todos os comentários
+                comments = ProposalComment.objects.filter(proposal=proposal)
+            else:
+                # Usuários comuns veem apenas comentários não internos
+                comments = ProposalComment.objects.filter(proposal=proposal, is_internal=False)
+            
+            serializer = ProposalCommentSerializer(comments, many=True)
+            return Response(serializer.data)
+        except Proposal.DoesNotExist:
+            return Response(
+                {"detail": "Proposta não encontrada ou você não tem permissão para visualizá-la."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    def post(self, request, proposal_id):
+        try:
+            # Verificar se o usuário tem acesso à proposta
+            proposal = self._get_proposal(proposal_id, request.user)
+            
+            # Preparar dados para o serializer
+            comment_data = {
+                'proposal': proposal.id,
+                'author_id': request.user.id,
+                'text': request.data.get('text', ''),
+                'is_internal': request.data.get('is_internal', False)
+            }
+            
+            # Apenas administradores podem criar comentários internos
+            if comment_data['is_internal'] and not request.user.is_staff:
+                return Response(
+                    {"detail": "Você não tem permissão para criar comentários internos."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            serializer = ProposalCommentSerializer(data=comment_data)
+            if serializer.is_valid():
+                comment = serializer.save()
+                
+                # Se o comentário não for interno, enviar notificação para o cliente
+                if not comment.is_internal and request.user.is_staff:
+                    notification_service = NotificationService()
+                    notification_service.send_comment_notification(
+                        proposal.user,
+                        proposal,
+                        comment.text
+                    )
+                
+                return Response(ProposalCommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Proposal.DoesNotExist:
+            return Response(
+                {"detail": "Proposta não encontrada ou você não tem permissão para comentar nela."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    def _get_proposal(self, proposal_id, user):
+        if user.is_staff:
+            # Administradores podem acessar qualquer proposta
+            return Proposal.objects.get(pk=proposal_id)
+        else:
+            # Usuários comuns só podem acessar suas próprias propostas
+            return Proposal.objects.get(pk=proposal_id, user=user)
+
 class ProposalApproveView(APIView):
     permission_classes = [permissions.IsAdminUser]
     
     def post(self, request, pk):
-        try:
-            proposal = Proposal.objects.get(id=pk)
-            old_status = proposal.status
-            
-            # Atualizar status
-            proposal.status = 'approved'
-            proposal.save(update_fields=['status', 'updated_at'])
-            
-            # Enviar notificação de mudança de status
-            NotificationService.notify_proposal_status_change(
-                proposal_id=proposal.id,
-                old_status=old_status,
-                new_status='approved'
+        proposal = get_object_or_404(Proposal, pk=pk)
+        
+        # Verificar estado atual da proposta
+        if proposal.status == 'approved':
+            return Response({
+                "detail": "Esta proposta já foi aprovada."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Armazenar o status anterior
+        previous_status = proposal.status
+        
+        # Atualizar os campos da proposta conforme os dados recebidos
+        if 'interest_rate' in request.data:
+            proposal.interest_rate = request.data['interest_rate']
+        
+        if 'amount_approved' in request.data:
+            proposal.amount_approved = request.data['amount_approved']
+        
+        if 'installment_value' in request.data:
+            proposal.installment_value = request.data['installment_value']
+        
+        if 'notes' in request.data:
+            proposal.notes = request.data['notes']
+        
+        # Atualizar status para aprovado
+        proposal.status = 'approved'
+        proposal.save()
+        
+        # Criar registro de mudança de status
+        status_change = ProposalStatusChange.objects.create(
+            proposal=proposal,
+            previous_status=previous_status,
+            new_status='approved',
+            changed_by=request.user,
+            reason=request.data.get('reason', 'Proposta aprovada')
+        )
+        
+        # Adicionar comentário (se fornecido)
+        if 'comment' in request.data and request.data['comment'].strip():
+            comment = ProposalComment.objects.create(
+                proposal=proposal,
+                author=request.user,
+                text=request.data['comment'],
+                is_internal=request.data.get('is_internal', False)
             )
             
-            return Response({"detail": "Proposta aprovada com sucesso."}, status=status.HTTP_200_OK)
-        except Proposal.DoesNotExist:
-            return Response(
-                {"detail": "Proposta não encontrada."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            return Response(
-                {"detail": f"Erro ao aprovar proposta: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
+            # Se o comentário não for interno, enviar notificação para o cliente
+            if not comment.is_internal:
+                notification_service = NotificationService()
+                notification_service.send_comment_notification(
+                    proposal.user,
+                    proposal,
+                    comment.text
+                )
+        
+        # Enviar notificação para o cliente
+        notification_service = NotificationService()
+        notification_service.send_approval_notification(
+            proposal.user,
+            proposal,
+            request.data.get('comment', None)
+        )
+        
+        # Retornar a proposta completa
+        serializer = ProposalDetailSerializer(proposal)
+        return Response(serializer.data)
 
 class ProposalRejectView(APIView):
     permission_classes = [permissions.IsAdminUser]
     
     def post(self, request, pk):
-        try:
-            proposal = Proposal.objects.get(id=pk)
-            old_status = proposal.status
-            reason = request.data.get('reason')
-            comments = request.data.get('comments')
-            
-            if not reason:
-                return Response(
-                    {"detail": "É necessário informar o motivo da rejeição."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Atualizar status e comentários
-            proposal.status = 'rejected'
-            proposal.rejection_reason = reason
-            if comments:
-                proposal.comments = comments
-            proposal.save(update_fields=['status', 'rejection_reason', 'comments', 'updated_at'])
-            
-            # Enviar notificação de mudança de status
-            NotificationService.notify_proposal_status_change(
-                proposal_id=proposal.id,
-                old_status=old_status,
-                new_status='rejected'
-            )
-            
-            return Response({"detail": "Proposta rejeitada com sucesso."}, status=status.HTTP_200_OK)
-        except Proposal.DoesNotExist:
-            return Response(
-                {"detail": "Proposta não encontrada."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            return Response(
-                {"detail": f"Erro ao rejeitar proposta: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
+        proposal = get_object_or_404(Proposal, pk=pk)
+        
+        # Verificar estado atual da proposta
+        if proposal.status == 'rejected':
+            return Response({
+                "detail": "Esta proposta já foi rejeitada."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verificar se o motivo da rejeição foi fornecido
+        if 'reason' not in request.data or not request.data['reason'].strip():
+            return Response({
+                "detail": "O motivo da rejeição é obrigatório."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Armazenar o status anterior
+        previous_status = proposal.status
+        
+        # Atualizar status para rejeitado e adicionar notas
+        proposal.status = 'rejected'
+        if 'notes' in request.data:
+            proposal.notes = request.data['notes']
+        proposal.save()
+        
+        # Criar registro de mudança de status
+        status_change = ProposalStatusChange.objects.create(
+            proposal=proposal,
+            previous_status=previous_status,
+            new_status='rejected',
+            changed_by=request.user,
+            reason=request.data.get('reason', '')
+        )
+        
+        # Adicionar comentário
+        comment = ProposalComment.objects.create(
+            proposal=proposal,
+            author=request.user,
+            text=request.data.get('comment', request.data['reason']),
+            is_internal=request.data.get('is_internal', False)
+        )
+        
+        # Enviar notificação para o cliente
+        notification_service = NotificationService()
+        notification_service.send_rejection_notification(
+            proposal.user,
+            proposal,
+            request.data.get('reason', '')
+        )
+        
+        # Retornar a proposta completa
+        serializer = ProposalDetailSerializer(proposal)
+        return Response(serializer.data)
 
 class RequestDocumentsView(APIView):
     permission_classes = [permissions.IsAdminUser]
     
     def post(self, request, pk):
-        try:
-            proposal = Proposal.objects.get(id=pk)
-            document_types = request.data.get('document_types', [])
-            message = request.data.get('message')
-            
-            if not document_types:
-                return Response(
-                    {"detail": "É necessário informar quais documentos estão sendo solicitados."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Atualizar status da proposta para "aguardando documentos"
-            old_status = proposal.status
-            proposal.status = 'pending_documents'
-            proposal.save(update_fields=['status', 'updated_at'])
-            
-            # Registrar documentos solicitados
-            # Código para registrar documentos solicitados...
-            
-            # Enviar notificação de solicitação de documentos
-            NotificationService.notify_document_request(
-                proposal_id=proposal.id,
-                document_types=document_types,
-                message=message
-            )
-            
-            # Enviar notificação de mudança de status
-            if old_status != 'pending_documents':
-                NotificationService.notify_proposal_status_change(
-                    proposal_id=proposal.id,
-                    old_status=old_status,
-                    new_status='pending_documents'
-                )
-            
-            return Response({"detail": "Documentos solicitados com sucesso."}, status=status.HTTP_200_OK)
-        except Proposal.DoesNotExist:
-            return Response(
-                {"detail": "Proposta não encontrada."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            return Response(
-                {"detail": f"Erro ao solicitar documentos: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            ) 
+        proposal = get_object_or_404(Proposal, pk=pk)
+        
+        # Verificar se os documentos solicitados foram especificados
+        if 'documents' not in request.data or not request.data['documents']:
+            return Response({
+                "detail": "Os documentos solicitados devem ser especificados."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Armazenar o status anterior
+        previous_status = proposal.status
+        
+        # Atualizar status para aguardando documentos
+        proposal.status = 'waiting_docs'
+        proposal.save()
+        
+        # Criar registro de mudança de status
+        status_change = ProposalStatusChange.objects.create(
+            proposal=proposal,
+            previous_status=previous_status,
+            new_status='waiting_docs',
+            changed_by=request.user,
+            reason='Documentos adicionais solicitados'
+        )
+        
+        # Adicionar comentário com a solicitação de documentos
+        document_message = request.data.get('message', 'Por favor, envie os documentos solicitados:')
+        document_list = ', '.join(request.data['documents'])
+        comment_text = f"{document_message} {document_list}"
+        
+        comment = ProposalComment.objects.create(
+            proposal=proposal,
+            author=request.user,
+            text=comment_text,
+            is_internal=False  # Comentário visível para o cliente
+        )
+        
+        # Enviar notificação para o cliente
+        notification_service = NotificationService()
+        notification_service.send_document_request_notification(
+            proposal.user,
+            proposal,
+            comment_text
+        )
+        
+        # Retornar a proposta completa
+        serializer = ProposalDetailSerializer(proposal)
+        return Response(serializer.data) 

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Celebra Capital - Exemplo de Integração PWA</title>
+
+    <!-- Incluir meta tags para PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0066cc" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Celebra Crédito" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <!-- Ícones -->
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/icons/favicon-16x16.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/icons/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="48x48"
+      href="/icons/favicon-48x48.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/icons/pwa-192x192.png"
+    />
+    <link rel="shortcut icon" href="/favicon.ico" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://preanalise.celebracapital.com.br/"
+    />
+    <meta
+      property="og:title"
+      content="Celebra Capital - Pré-Análise de Crédito"
+    />
+    <meta
+      property="og:description"
+      content="Plataforma de pré-análise de crédito para a Celebra Capital. Avalie oportunidades de financiamento de forma rápida e segura."
+    />
+    <meta
+      property="og:image"
+      content="https://preanalise.celebracapital.com.br/social-image.jpg"
+    />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta
+      property="twitter:url"
+      content="https://preanalise.celebracapital.com.br/"
+    />
+    <meta
+      property="twitter:title"
+      content="Celebra Capital - Pré-Análise de Crédito"
+    />
+    <meta
+      property="twitter:description"
+      content="Plataforma de pré-análise de crédito para a Celebra Capital. Avalie oportunidades de financiamento de forma rápida e segura."
+    />
+    <meta
+      property="twitter:image"
+      content="https://preanalise.celebracapital.com.br/social-image.jpg"
+    />
+
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .logo {
+        width: 100px;
+        height: 100px;
+        background-color: #0066cc;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0 auto 1rem;
+      }
+      h1 {
+        color: #0066cc;
+      }
+      .card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      button {
+        background-color: #0066cc;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background-color: #0055aa;
+      }
+      button.secondary {
+        background-color: #f0f0f0;
+        color: #333;
+      }
+      button.secondary:hover {
+        background-color: #e0e0e0;
+      }
+      footer {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ddd;
+        font-size: 0.9rem;
+        color: #666;
+      }
+      pre {
+        background-color: #f0f0f0;
+        padding: 10px;
+        border-radius: 4px;
+        overflow: auto;
+        font-size: 13px;
+      }
+      .notification-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #ff4444;
+        border-radius: 50%;
+        margin-left: 5px;
+      }
+      #notification-panel,
+      #proposal-form {
+        display: none;
+      }
+      #proposal-form {
+        padding: 15px;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .form-row {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+      #install-button {
+        display: none;
+        margin: 20px auto;
+        padding: 12px 25px;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">CC</div>
+      <h1>Celebra Capital</h1>
+      <p>Exemplo de Integração PWA</p>
+    </header>
+
+    <main>
+      <div class="card">
+        <h2>Instalação do PWA</h2>
+        <p>
+          Esta página demonstra a integração dos recursos PWA da Celebra
+          Capital. Você pode instalar esta aplicação em seu dispositivo para
+          acesso rápido e funcionamento offline.
+        </p>
+
+        <button id="install-button">Instalar Aplicativo</button>
+      </div>
+
+      <div class="card">
+        <h2>Notificações Push</h2>
+        <p>
+          As notificações permitem manter o usuário informado sobre atualizações
+          importantes, mesmo quando não está usando o aplicativo.
+        </p>
+
+        <div class="actions">
+          <button id="enable-notifications">Ativar Notificações</button>
+          <button id="send-notification" class="secondary">
+            Testar Notificação
+          </button>
+          <button id="toggle-panel" class="secondary">
+            Ver Painel
+            <span id="notification-badge" class="notification-dot"></span>
+          </button>
+        </div>
+
+        <div id="notification-panel" class="card">
+          <h3>Painel de Notificações</h3>
+          <p>Aqui você veria suas notificações mais recentes.</p>
+          <pre id="notification-status">
+Status: Aguardando permissão do usuário.</pre
+          >
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Sincronização em Segundo Plano</h2>
+        <p>
+          Permite enviar dados mesmo quando a conexão é instável ou inexistente.
+          Os dados serão sincronizados automaticamente quando a conexão for
+          restaurada.
+        </p>
+
+        <div class="actions">
+          <button id="new-proposal">Nova Proposta</button>
+          <button id="sync-now" class="secondary">Sincronizar Agora</button>
+        </div>
+
+        <div id="proposal-form" class="card">
+          <h3>Nova Proposta</h3>
+
+          <div class="form-row">
+            <label for="proposal-title">Título</label>
+            <input
+              type="text"
+              id="proposal-title"
+              placeholder="Ex: Financiamento Apartamento"
+            />
+          </div>
+
+          <div class="form-row">
+            <label for="proposal-amount">Valor (R$)</label>
+            <input
+              type="number"
+              id="proposal-amount"
+              placeholder="Ex: 250000"
+            />
+          </div>
+
+          <div class="form-row">
+            <label for="proposal-description">Descrição</label>
+            <textarea
+              id="proposal-description"
+              rows="3"
+              placeholder="Detalhes da proposta..."
+            ></textarea>
+          </div>
+
+          <div class="actions">
+            <button id="save-proposal">Salvar Proposta</button>
+            <button id="cancel-proposal" class="secondary">Cancelar</button>
+          </div>
+        </div>
+
+        <pre id="sync-status">Status: Aguardando sincronização.</pre>
+      </div>
+    </main>
+
+    <footer>&copy; 2023 Celebra Capital - Todos os direitos reservados</footer>
+
+    <!-- PWA Utils -->
+    <script src="/pwa-utils.js"></script>
+    <script src="/pwa-install-banner.js"></script>
+    <script src="/push-notifications.js"></script>
+    <script src="/background-sync.js"></script>
+    <script src="/cache-manager.js"></script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        // Status elements
+        const notificationStatus = document.getElementById(
+          'notification-status'
+        )
+        const syncStatus = document.getElementById('sync-status')
+        const notificationBadge = document.getElementById('notification-badge')
+
+        // Toggle notification panel
+        document
+          .getElementById('toggle-panel')
+          .addEventListener('click', function () {
+            const panel = document.getElementById('notification-panel')
+            panel.style.display =
+              panel.style.display === 'none' ? 'block' : 'none'
+            notificationBadge.style.display = 'none'
+          })
+
+        // Enable notifications
+        document
+          .getElementById('enable-notifications')
+          .addEventListener('click', async function () {
+            if (CelebraNotifications.areSupported()) {
+              const permission = await CelebraNotifications.requestPermission()
+              if (permission) {
+                notificationStatus.textContent =
+                  'Status: Permissão de notificação concedida.'
+                this.textContent = 'Notificações Ativadas'
+                this.disabled = true
+              } else {
+                notificationStatus.textContent =
+                  'Status: Permissão de notificação negada.'
+              }
+            } else {
+              notificationStatus.textContent =
+                'Status: Notificações não são suportadas neste navegador.'
+              this.disabled = true
+            }
+          })
+
+        // Test notification
+        document
+          .getElementById('send-notification')
+          .addEventListener('click', function () {
+            CelebraNotifications.showLocalNotification('Teste de Notificação', {
+              body: 'Esta é uma notificação de teste da Celebra Capital.',
+              data: { url: window.location.href },
+            })
+
+            notificationBadge.style.display = 'inline-block'
+          })
+
+        // New proposal
+        document
+          .getElementById('new-proposal')
+          .addEventListener('click', function () {
+            document.getElementById('proposal-form').style.display = 'block'
+          })
+
+        // Cancel proposal
+        document
+          .getElementById('cancel-proposal')
+          .addEventListener('click', function () {
+            document.getElementById('proposal-form').style.display = 'none'
+          })
+
+        // Save proposal
+        document
+          .getElementById('save-proposal')
+          .addEventListener('click', async function () {
+            const title = document.getElementById('proposal-title').value
+            const amount = document.getElementById('proposal-amount').value
+            const description = document.getElementById(
+              'proposal-description'
+            ).value
+
+            if (!title || !amount) {
+              alert(
+                'Por favor, preencha pelo menos o título e o valor da proposta.'
+              )
+              return
+            }
+
+            const proposal = {
+              id: Date.now().toString(),
+              title,
+              amount: parseFloat(amount),
+              description,
+              date: new Date().toISOString(),
+              status: 'pending',
+            }
+
+            try {
+              const saved = await CelebraBackgroundSync.saveProposal(proposal)
+
+              if (saved) {
+                syncStatus.textContent =
+                  'Status: Proposta salva. Será sincronizada quando houver conexão.'
+                document.getElementById('proposal-form').style.display = 'none'
+
+                // Resetar formulário
+                document.getElementById('proposal-title').value = ''
+                document.getElementById('proposal-amount').value = ''
+                document.getElementById('proposal-description').value = ''
+
+                // Exibir notificação
+                CelebraNotifications.showProposalNotification(proposal)
+              } else {
+                syncStatus.textContent = 'Status: Erro ao salvar proposta.'
+              }
+            } catch (error) {
+              syncStatus.textContent = `Status: Erro - ${error.message}`
+              console.error('Erro ao salvar proposta:', error)
+            }
+          })
+
+        // Sync now
+        document
+          .getElementById('sync-now')
+          .addEventListener('click', async function () {
+            syncStatus.textContent =
+              'Status: Tentando sincronizar manualmente...'
+
+            try {
+              const result =
+                await CelebraBackgroundSync.syncProposalsImmediately()
+              if (result) {
+                syncStatus.textContent =
+                  'Status: Sincronização manual concluída.'
+              } else {
+                syncStatus.textContent =
+                  'Status: Falha na sincronização manual.'
+              }
+            } catch (error) {
+              syncStatus.textContent = `Status: Erro na sincronização - ${error.message}`
+              console.error('Erro na sincronização:', error)
+            }
+          })
+
+        // Verificar suporte a notificações
+        if (!CelebraNotifications.areSupported()) {
+          document.getElementById('enable-notifications').disabled = true
+          document.getElementById('enable-notifications').textContent =
+            'Notificações não suportadas'
+          notificationStatus.textContent =
+            'Status: Notificações não são suportadas neste navegador.'
+        } else if (CelebraNotifications.hasPermission()) {
+          document.getElementById('enable-notifications').disabled = true
+          document.getElementById('enable-notifications').textContent =
+            'Notificações Ativadas'
+          notificationStatus.textContent =
+            'Status: Permissão de notificação já concedida.'
+        }
+
+        // Verificar suporte a sincronização
+        if (!CelebraBackgroundSync.isSupported()) {
+          document.getElementById('sync-now').disabled = true
+          syncStatus.textContent =
+            'Status: Sincronização em segundo plano não é suportada neste navegador.'
+        }
+
+        // Configurar botão de instalação
+        const installButton = document.getElementById('install-button')
+
+        // Armazenar evento para uso posterior
+        let deferredPrompt
+
+        // Escutar pelo evento de instalação
+        window.addEventListener('beforeinstallprompt', (e) => {
+          // Prevenir Chrome 67+ de mostrar automaticamente
+          e.preventDefault()
+          // Armazenar evento para uso posterior
+          deferredPrompt = e
+          // Mostrar botão de instalação
+          installButton.style.display = 'block'
+        })
+
+        // Escutar clique no botão de instalação
+        installButton.addEventListener('click', (e) => {
+          // Mostrar prompt de instalação
+          deferredPrompt.prompt()
+
+          // Esperar pela escolha do usuário
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('Usuário aceitou a instalação')
+              installButton.textContent = 'Instalado'
+              installButton.disabled = true
+            } else {
+              console.log('Usuário recusou a instalação')
+            }
+            deferredPrompt = null
+          })
+        })
+
+        // Verificar se já está instalado
+        if (
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.navigator.standalone
+        ) {
+          installButton.style.display = 'none'
+        }
+      })
+    </script>
+  </body>
+</html>

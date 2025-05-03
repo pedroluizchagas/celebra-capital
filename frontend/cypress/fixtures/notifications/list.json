@@ -1,0 +1,47 @@
+[
+  {
+    "id": 105,
+    "title": "Nova proposta recebida",
+    "message": "Uma nova proposta de crédito foi recebida de João Silva",
+    "type": "info",
+    "is_read": false,
+    "created_at": "2023-11-05T14:30:00",
+    "link": "/admin/proposals/1025"
+  },
+  {
+    "id": 104,
+    "title": "Documentos enviados",
+    "message": "Ana Santos enviou os documentos solicitados para a proposta #1022",
+    "type": "success",
+    "is_read": false,
+    "created_at": "2023-11-05T13:45:00",
+    "link": "/admin/proposals/1022"
+  },
+  {
+    "id": 103,
+    "title": "Proposta aprovada",
+    "message": "A proposta #1023 de Carlos Oliveira foi aprovada por Juliana Ferreira",
+    "type": "success",
+    "is_read": true,
+    "created_at": "2023-11-05T09:30:00",
+    "link": "/admin/proposals/1023"
+  },
+  {
+    "id": 102,
+    "title": "Contrato assinado",
+    "message": "O contrato da proposta #1020 foi assinado pelo cliente",
+    "type": "success",
+    "is_read": true,
+    "created_at": "2023-11-04T16:20:00",
+    "link": "/admin/proposals/1020"
+  },
+  {
+    "id": 101,
+    "title": "Proposta rejeitada",
+    "message": "A proposta #1021 de Roberto Ferreira foi rejeitada por Paula Andrade",
+    "type": "warning",
+    "is_read": true,
+    "created_at": "2023-11-03T15:30:00",
+    "link": "/admin/proposals/1021"
+  }
+]

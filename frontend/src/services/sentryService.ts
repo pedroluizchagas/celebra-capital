@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/react'
-import { BrowserTracing } from '@sentry/tracing'
 
 /**
  * Inicializa o Sentry para monitoramento de erros
@@ -19,22 +18,43 @@ export const initSentry = (environment: string = 'development') => {
     return
   }
 
+  // Inicialização para versão 9.x do Sentry
   Sentry.init({
     dsn,
-    integrations: [
-      new BrowserTracing({
-        // Rastreamento de performance para navegação e requisições
-        tracingOrigins: ['localhost', /^\//],
-      }),
-    ],
-    // Configurar amostragem de performance (0.2 = 20% das transações)
-    tracesSampleRate: 0.2,
+    // Aumentar amostragem em ambientes de não-produção
+    // Diminuir em produção para reduzir custos
+    tracesSampleRate: environment === 'production' ? 0.2 : 1.0,
+    replaysSessionSampleRate: environment === 'production' ? 0.1 : 0.5,
+    replaysOnErrorSampleRate: 1.0,
+
     // Ambiente (staging, production)
     environment,
-    // Não capturar erros em desenvolvimento
+
+    // Desativar em desenvolvimento
     enabled: environment !== 'development',
+
     // Versão da aplicação (para rastreamento de releases)
     release: import.meta.env.VITE_APP_VERSION || 'unknown',
+
+    // Filtrando erros com CORS e problemas de rede
+    beforeSend(event) {
+      // Evitar enviar erros de CORS e problemas de rede
+      if (
+        event.exception?.values?.some(
+          (exception) =>
+            exception.value?.includes('Network Error') ||
+            exception.value?.includes('CORS') ||
+            exception.value?.includes('Failed to fetch')
+        )
+      ) {
+        // Marcar como problema de rede para facilitar a filtragem
+        event.tags = { ...event.tags, network_related: true }
+      }
+      return event
+    },
+
+    // Configurações de contexto para ajudar no debugging
+    attachStacktrace: true,
   })
 }
 
@@ -49,7 +69,7 @@ export const captureError = (
 ) => {
   if (typeof error === 'string') {
     Sentry.captureMessage(error, {
-      level: Sentry.Severity.Error,
+      level: 'error',
       ...(context && { extra: context }),
     })
   } else {
@@ -79,8 +99,52 @@ export const setUserInfo = (
   }
 }
 
+/**
+ * Adicionar um breadcrumb personalizado para rastrear ações do usuário
+ * @param category Categoria do breadcrumb
+ * @param message Mensagem descritiva
+ * @param data Dados adicionais (opcional)
+ */
+export const addBreadcrumb = (
+  category: string,
+  message: string,
+  data?: Record<string, any>
+) => {
+  Sentry.addBreadcrumb({
+    category,
+    message,
+    data,
+    level: 'info',
+  })
+}
+
+/**
+ * Adiciona contexto para o Sentry, útil para adicionar metadados a erros
+ * @param contextName Nome do contexto
+ * @param contextData Dados do contexto
+ */
+export const setContext = (
+  contextName: string,
+  contextData: Record<string, any>
+) => {
+  Sentry.setContext(contextName, contextData)
+}
+
+/**
+ * Define tags para o Sentry, útil para filtrar eventos
+ * @param tags Objeto com as tags a serem definidas
+ */
+export const setTags = (tags: Record<string, string>) => {
+  Object.entries(tags).forEach(([key, value]) => {
+    Sentry.setTag(key, value)
+  })
+}
+
 export default {
   initSentry,
   captureError,
   setUserInfo,
+  addBreadcrumb,
+  setContext,
+  setTags,
 }

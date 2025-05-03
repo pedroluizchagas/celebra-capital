@@ -26,6 +26,16 @@ interface CheckCpfResponse {
   message: string
 }
 
+interface ResetPasswordRequestParams {
+  email: string
+}
+
+interface ResetPasswordConfirmParams {
+  uid: string
+  token: string
+  password: string
+}
+
 const authService = {
   /**
    * Registrar um novo usuário
@@ -136,6 +146,32 @@ const authService = {
    */
   isAuthenticated: (): boolean => {
     return !!localStorage.getItem('token')
+  },
+
+  /**
+   * Solicitar recuperação de senha
+   */
+  requestPasswordReset: async (params: ResetPasswordRequestParams) => {
+    try {
+      const response = await api.post('/users/reset-password/', params)
+      return response.data
+    } catch (error) {
+      console.error('Erro ao solicitar recuperação de senha:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Confirmar recuperação de senha
+   */
+  confirmPasswordReset: async (params: ResetPasswordConfirmParams) => {
+    try {
+      const response = await api.post('/users/reset-password-confirm/', params)
+      return response.data
+    } catch (error) {
+      console.error('Erro ao confirmar recuperação de senha:', error)
+      throw error
+    }
   },
 }
 

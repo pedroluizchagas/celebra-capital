@@ -1,0 +1,21 @@
+{
+  "name": "celebra-capital-preanalise",
+  "version": "1.0.0",
+  "description": "Plataforma de pré-análise de crédito para a Celebra Capital",
+  "main": "index.js",
+  "scripts": {
+    "generate-icons": "node scripts/generate-icons.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "celebra-capital",
+    "credito",
+    "preanalise"
+  ],
+  "author": "Celebra Capital",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "canvas": "^2.11.2",
+    "chalk": "^4.1.2"
+  }
+}

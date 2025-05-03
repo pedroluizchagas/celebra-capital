@@ -1,0 +1,116 @@
+{
+  "data": [
+    {
+      "id": 1050,
+      "user": {
+        "id": 35,
+        "name": "Amanda Martins",
+        "email": "amanda.martins@example.com"
+      },
+      "credit_type": "consigned",
+      "amount_requested": 150000,
+      "status": "completed",
+      "interest_rate": 1.2,
+      "company_info": {
+        "razao_social": "Martins Consultoria LTDA",
+        "cnpj": "45.678.901/0001-23"
+      },
+      "created_at": "2023-11-01T10:15:00",
+      "updated_at": "2023-11-05T10:45:00"
+    },
+    {
+      "id": 1049,
+      "user": {
+        "id": 22,
+        "name": "Maria Souza",
+        "email": "maria.souza@example.com"
+      },
+      "credit_type": "card",
+      "amount_requested": 10000,
+      "status": "approved",
+      "interest_rate": 1.8,
+      "company_info": {
+        "razao_social": "Souza Eventos ME",
+        "cnpj": "78.901.234/0001-56"
+      },
+      "created_at": "2023-10-28T14:20:00",
+      "updated_at": "2023-11-02T09:30:00"
+    },
+    {
+      "id": 1048,
+      "user": {
+        "id": 18,
+        "name": "Carlos Oliveira",
+        "email": "carlos.oliveira@example.com"
+      },
+      "credit_type": "personal",
+      "amount_requested": 75000,
+      "status": "waiting_docs",
+      "interest_rate": null,
+      "company_info": {
+        "razao_social": "Oliveira Tecnologia LTDA",
+        "cnpj": "56.789.012/0001-34"
+      },
+      "created_at": "2023-10-25T09:15:00",
+      "updated_at": "2023-10-30T16:20:00"
+    },
+    {
+      "id": 1047,
+      "user": {
+        "id": 41,
+        "name": "Paulo Mendes",
+        "email": "paulo.mendes@example.com"
+      },
+      "credit_type": "consigned",
+      "amount_requested": 250000,
+      "status": "analyzing",
+      "interest_rate": null,
+      "company_info": {
+        "razao_social": "Mendes Arquitetura LTDA",
+        "cnpj": "89.012.345/0001-67"
+      },
+      "created_at": "2023-10-22T11:40:00",
+      "updated_at": "2023-10-30T14:15:00"
+    },
+    {
+      "id": 1046,
+      "user": {
+        "id": 27,
+        "name": "Ana Santos",
+        "email": "ana.santos@example.com"
+      },
+      "credit_type": "fgts",
+      "amount_requested": 20000,
+      "status": "rejected",
+      "interest_rate": null,
+      "company_info": {
+        "razao_social": "Santos Representações ME",
+        "cnpj": "12.345.678/0001-90"
+      },
+      "created_at": "2023-10-20T08:30:00",
+      "updated_at": "2023-10-25T10:10:00"
+    },
+    {
+      "id": 1045,
+      "user": {
+        "id": 31,
+        "name": "Roberto Ferreira",
+        "email": "roberto.ferreira@example.com"
+      },
+      "credit_type": "personal",
+      "amount_requested": 100000,
+      "status": "pending",
+      "interest_rate": null,
+      "company_info": {
+        "razao_social": "Ferreira Contabilidade LTDA",
+        "cnpj": "34.567.890/0001-12"
+      },
+      "created_at": "2023-10-18T15:45:00",
+      "updated_at": "2023-10-18T15:45:00"
+    }
+  ],
+  "total": 125,
+  "page": 1,
+  "per_page": 10,
+  "last_page": 13
+}

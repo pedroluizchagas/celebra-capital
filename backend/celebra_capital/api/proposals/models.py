@@ -77,6 +77,7 @@ class Signature(models.Model):
     signature_date = models.DateTimeField(blank=True, null=True)
     ip_address = models.GenericIPAddressField(blank=True, null=True)
     is_signed = models.BooleanField(default=False)
+    provider = models.CharField(max_length=50, default='d4sign', help_text='Provedor de assinatura: clicksign ou d4sign')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -86,3 +87,41 @@ class Signature(models.Model):
     class Meta:
         verbose_name = "Assinatura"
         verbose_name_plural = "Assinaturas" 
+
+class ProposalComment(models.Model):
+    """
+    Modelo para armazenar comentários em propostas.
+    """
+    proposal = models.ForeignKey(Proposal, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='proposal_comments')
+    text = models.TextField(verbose_name="Comentário")
+    is_internal = models.BooleanField(default=True, help_text="Determina se o comentário é interno (visível apenas para administradores)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Comentário {self.id} - Proposta {self.proposal.id}"
+    
+    class Meta:
+        verbose_name = "Comentário de Proposta"
+        verbose_name_plural = "Comentários de Propostas"
+        ordering = ['-created_at']
+
+class ProposalStatusChange(models.Model):
+    """
+    Modelo para rastrear histórico de mudanças de status da proposta.
+    """
+    proposal = models.ForeignKey(Proposal, on_delete=models.CASCADE, related_name='status_changes')
+    previous_status = models.CharField(max_length=20, choices=Proposal.STATUS_CHOICES)
+    new_status = models.CharField(max_length=20, choices=Proposal.STATUS_CHOICES)
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='status_changes')
+    reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Mudança de Status da Proposta {self.proposal.id}: {self.previous_status} → {self.new_status}"
+    
+    class Meta:
+        verbose_name = "Mudança de Status da Proposta"
+        verbose_name_plural = "Mudanças de Status de Propostas"
+        ordering = ['-created_at'] 

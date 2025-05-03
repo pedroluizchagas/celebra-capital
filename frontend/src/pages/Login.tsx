@@ -1,145 +1,222 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import authService from '../services/authService'
+import React, { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from 'react-router-dom'
+import { Form, FormField, Checkbox } from '../components/Form'
+import { useAuth } from '../context/AuthContext'
+import useAnalytics from '../hooks/useAnalytics'
+
+// Schema de validação
+const loginSchema = z.object({
+  email: z.string().email('Email inválido').min(1, 'Email é obrigatório'),
+  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  remember: z.boolean().optional(),
+})
+
+type LoginFormData = z.infer<typeof loginSchema>
 
 const Login: React.FC = () => {
-  const navigate = useNavigate()
-  const [cpf, setCpf] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const { login, isLoading, error } = useAuth()
+  const analytics = useAnalytics()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setIsLoading(true)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      remember: false,
+    },
+  })
 
+  // Rastrear início da interação com o formulário
+  useEffect(() => {
+    analytics.trackFormStart('login')
+  }, [analytics])
+
+  const onSubmit = async (data: LoginFormData) => {
     try {
-      // Formatação básica de CPF (remover pontos e traços)
-      const formattedCpf = cpf.replace(/\D/g, '')
+      await login(data.email, data.password)
 
-      // Validação simples de CPF
-      if (formattedCpf.length !== 11) {
-        setError('CPF inválido. Por favor, digite os 11 dígitos.')
-        setIsLoading(false)
-        return
+      // Lembra o usuário se solicitado
+      if (data.remember) {
+        // Configura um cookie de longa duração
+        document.cookie = `rememberUser=${data.email}; max-age=2592000; path=/`
       }
 
-      // Validação simples de senha
-      if (password.length < 6) {
-        setError('A senha deve conter pelo menos 6 caracteres.')
-        setIsLoading(false)
-        return
+      // Rastrear login bem-sucedido
+      analytics.trackLogin('email')
+    } catch (err) {
+      // Rastrear erro de login
+      if (err instanceof Error) {
+        analytics.trackError(err.message, 'LOGIN_ERROR', 'LoginPage')
+      } else {
+        analytics.trackError(
+          'Erro desconhecido ao fazer login',
+          'UNKNOWN_LOGIN_ERROR',
+          'LoginPage'
+        )
       }
-
-      // Chamar o serviço de autenticação
-      await authService.login({
-        cpf: formattedCpf,
-        password,
-      })
-
-      // Redirecionar para a página inicial após login bem-sucedido
-      navigate('/')
-    } catch (error: any) {
-      console.error('Erro ao fazer login:', error)
-      setError(
-        error.response?.data?.message ||
-          'Erro ao fazer login. Verifique suas credenciais.'
-      )
-    } finally {
-      setIsLoading(false)
     }
-  }
-
-  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Formatação automática do CPF: 123.456.789-00
-    let value = e.target.value.replace(/\D/g, '')
-    if (value.length > 11) value = value.slice(0, 11)
-
-    if (value.length > 9) {
-      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(
-        6,
-        9
-      )}-${value.slice(9)}`
-    } else if (value.length > 6) {
-      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`
-    } else if (value.length > 3) {
-      value = `${value.slice(0, 3)}.${value.slice(3)}`
-    }
-
-    setCpf(value)
   }
 
   return (
-    <div className="card p-8 max-w-sm mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
-          Acesse sua conta
-        </h2>
-        <p className="text-gray-600 dark:text-gray-300 mt-2">
-          Digite seu CPF e senha para continuar
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label
-            htmlFor="cpf"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            CPF
-          </label>
-          <input
-            type="text"
-            id="cpf"
-            value={cpf}
-            onChange={handleCpfChange}
-            placeholder="123.456.789-00"
-            className="input-field"
-            required
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <img
+            className="mx-auto h-16 w-auto"
+            src="/logo.svg"
+            alt="Celebra Capital"
           />
-        </div>
-
-        <div className="mb-6">
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Senha
-          </label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Sua senha"
-            className="input-field"
-            required
-          />
-        </div>
-
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-
-        <button
-          type="submit"
-          className="btn-primary w-full"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Entrando...' : 'Entrar'}
-        </button>
-
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Não tem uma conta?{' '}
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Acesse sua conta
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Ou{' '}
             <Link
-              to="/register"
-              className="text-celebra-blue font-medium hover:underline"
+              to="/cadastro"
+              className="font-medium text-primary-600 hover:text-primary-500"
             >
-              Cadastre-se
+              cadastre-se agora
             </Link>
           </p>
         </div>
-      </form>
+
+        {error && (
+          <div
+            className="bg-red-50 border-l-4 border-red-400 p-4 mb-4"
+            role="alert"
+          >
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-red-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <Form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
+          <div className="rounded-md shadow-sm -space-y-px">
+            <FormField
+              id="email"
+              label="Email"
+              type="email"
+              autoComplete="email"
+              placeholder="seu@email.com"
+              {...register('email')}
+              error={errors.email?.message}
+              required
+            />
+
+            <FormField
+              id="password"
+              label="Senha"
+              type="password"
+              autoComplete="current-password"
+              placeholder="••••••"
+              {...register('password')}
+              error={errors.password?.message}
+              required
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Checkbox
+              id="remember"
+              label="Lembrar minha conta"
+              {...register('remember')}
+            />
+
+            <div className="text-sm">
+              <Link
+                to="/solicitar-recuperacao"
+                className="font-medium text-primary-600 hover:text-primary-500"
+                onClick={() =>
+                  analytics.trackEvent('CLICK', {
+                    element: 'recover_password_link',
+                  })
+                }
+              >
+                Esqueceu sua senha?
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-70"
+              aria-disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                    <svg
+                      className="animate-spin h-5 w-5 text-primary-300"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  </span>
+                  Entrando...
+                </>
+              ) : (
+                <>
+                  <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                    <svg
+                      className="h-5 w-5 text-primary-300"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                  Entrar
+                </>
+              )}
+            </button>
+          </div>
+        </Form>
+      </div>
     </div>
   )
 }

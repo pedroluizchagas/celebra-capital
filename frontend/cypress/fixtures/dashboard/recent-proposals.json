@@ -1,0 +1,67 @@
+[
+  {
+    "id": 1025,
+    "user": {
+      "id": 15,
+      "name": "João Silva",
+      "email": "joao.silva@example.com"
+    },
+    "credit_type": "personal",
+    "amount_requested": 25000,
+    "status": "pending",
+    "created_at": "2023-11-05T14:30:00",
+    "updated_at": "2023-11-05T14:30:00"
+  },
+  {
+    "id": 1024,
+    "user": {
+      "id": 22,
+      "name": "Maria Souza",
+      "email": "maria.souza@example.com"
+    },
+    "credit_type": "consigned",
+    "amount_requested": 50000,
+    "status": "analyzing",
+    "created_at": "2023-11-05T10:15:00",
+    "updated_at": "2023-11-05T13:20:00"
+  },
+  {
+    "id": 1023,
+    "user": {
+      "id": 18,
+      "name": "Carlos Oliveira",
+      "email": "carlos.oliveira@example.com"
+    },
+    "credit_type": "fgts",
+    "amount_requested": 15000,
+    "status": "approved",
+    "created_at": "2023-11-04T16:45:00",
+    "updated_at": "2023-11-05T09:30:00"
+  },
+  {
+    "id": 1022,
+    "user": {
+      "id": 27,
+      "name": "Ana Santos",
+      "email": "ana.santos@example.com"
+    },
+    "credit_type": "card",
+    "amount_requested": 5000,
+    "status": "waiting_docs",
+    "created_at": "2023-11-04T11:20:00",
+    "updated_at": "2023-11-04T14:10:00"
+  },
+  {
+    "id": 1021,
+    "user": {
+      "id": 31,
+      "name": "Roberto Ferreira",
+      "email": "roberto.ferreira@example.com"
+    },
+    "credit_type": "personal",
+    "amount_requested": 35000,
+    "status": "rejected",
+    "created_at": "2023-11-03T09:45:00",
+    "updated_at": "2023-11-03T15:30:00"
+  }
+]

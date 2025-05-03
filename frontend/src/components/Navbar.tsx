@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, memo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import NotificationIcon from './NotificationIcon'
@@ -8,20 +8,20 @@ interface NavbarProps {
   darkMode: boolean
 }
 
-const Navbar: React.FC<NavbarProps> = ({ toggleDarkMode, darkMode }) => {
+const Navbar: React.FC<NavbarProps> = memo(({ toggleDarkMode, darkMode }) => {
   const { user, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     logout()
     navigate('/')
     setIsMenuOpen(false)
-  }
+  }, [logout, navigate])
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen)
-  }
+  const toggleMenu = useCallback(() => {
+    setIsMenuOpen((prev) => !prev)
+  }, [])
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-sm">
@@ -211,6 +211,6 @@ const Navbar: React.FC<NavbarProps> = ({ toggleDarkMode, darkMode }) => {
       </div>
     </nav>
   )
-}
+})
 
 export default Navbar

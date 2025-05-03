@@ -1,0 +1,101 @@
+<!-- Meta tags para SEO e compartilhamento social -->
+<!-- Básicas -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta
+  name="description"
+  content="Plataforma de pré-análise de crédito para a Celebra Capital"
+/>
+<meta
+  name="keywords"
+  content="celebra capital, pré-análise, crédito, financiamento, investimento"
+/>
+<meta name="author" content="Celebra Capital" />
+
+<!-- Apple specific -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Celebra Crédito" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#0066cc" />
+
+<!-- Ícones -->
+<link
+  rel="icon"
+  type="image/png"
+  sizes="16x16"
+  href="/icons/favicon-16x16.png"
+/>
+<link
+  rel="icon"
+  type="image/png"
+  sizes="32x32"
+  href="/icons/favicon-32x32.png"
+/>
+<link
+  rel="icon"
+  type="image/png"
+  sizes="48x48"
+  href="/icons/favicon-48x48.png"
+/>
+<link
+  rel="icon"
+  type="image/png"
+  sizes="192x192"
+  href="/icons/pwa-192x192.png"
+/>
+<link rel="shortcut icon" href="/favicon.ico" />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://preanalise.celebracapital.com.br/" />
+<meta property="og:title" content="Celebra Capital - Pré-Análise de Crédito" />
+<meta
+  property="og:description"
+  content="Plataforma de pré-análise de crédito para a Celebra Capital. Avalie oportunidades de financiamento de forma rápida e segura."
+/>
+<meta
+  property="og:image"
+  content="https://preanalise.celebracapital.com.br/social-image.jpg"
+/>
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image" />
+<meta
+  property="twitter:url"
+  content="https://preanalise.celebracapital.com.br/"
+/>
+<meta
+  property="twitter:title"
+  content="Celebra Capital - Pré-Análise de Crédito"
+/>
+<meta
+  property="twitter:description"
+  content="Plataforma de pré-análise de crédito para a Celebra Capital. Avalie oportunidades de financiamento de forma rápida e segura."
+/>
+<meta
+  property="twitter:image"
+  content="https://preanalise.celebracapital.com.br/social-image.jpg"
+/>
+
+<!-- Script para registrar o Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker
+        .register('/service-worker.js')
+        .then(function (registration) {
+          console.log(
+            'Service Worker registrado com sucesso:',
+            registration.scope
+          )
+        })
+        .catch(function (error) {
+          console.log('Falha ao registrar o Service Worker:', error)
+        })
+    })
+  }
+</script>

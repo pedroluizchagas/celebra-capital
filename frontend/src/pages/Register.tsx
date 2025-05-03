@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import authService from '../services/authService'
+import TermsModal from '../components/modals/TermsModal'
+import PrivacyModal from '../components/modals/PrivacyModal'
 
 const Register: React.FC = () => {
   const navigate = useNavigate()
@@ -17,6 +19,9 @@ const Register: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [step, setStep] = useState(1) // 1: Dados pessoais, 2: Credenciais
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -119,6 +124,14 @@ const Register: React.FC = () => {
     // Validar confirmação de senha
     if (formData.password !== formData.confirmPassword) {
       setError('As senhas não coincidem.')
+      return false
+    }
+
+    // Verificar aceitação dos termos
+    if (!termsAccepted) {
+      setError(
+        'Você precisa aceitar os termos de uso e política de privacidade'
+      )
       return false
     }
 
@@ -269,7 +282,7 @@ const Register: React.FC = () => {
               htmlFor="email"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              E-mail
+              Email
             </label>
             <input
               type="email"
@@ -307,7 +320,7 @@ const Register: React.FC = () => {
               htmlFor="user_type"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              Tipo de Vínculo
+              Tipo de Usuário
             </label>
             <select
               id="user_type"
@@ -318,8 +331,8 @@ const Register: React.FC = () => {
               required
             >
               <option value="public_server">Servidor Público</option>
-              <option value="retiree">Aposentado/Pensionista</option>
-              <option value="police_military">Policial/Bombeiro/Militar</option>
+              <option value="retiree">Aposentado</option>
+              <option value="pensioner">Pensionista</option>
             </select>
           </div>
 
@@ -328,7 +341,7 @@ const Register: React.FC = () => {
               htmlFor="monthly_income"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              Renda Mensal
+              Renda Mensal (R$)
             </label>
             <input
               type="number"
@@ -336,26 +349,27 @@ const Register: React.FC = () => {
               name="monthly_income"
               value={formData.monthly_income}
               onChange={handleChange}
-              placeholder="0,00"
+              placeholder="0.00"
               step="0.01"
+              min="0"
               className="input-field"
               required
             />
           </div>
 
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
 
-          <div className="mt-8 flex justify-between">
-            <Link
-              to="/login"
-              className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800"
-            >
-              Voltar
-            </Link>
-            <button type="submit" className="btn-primary">
-              Próximo
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="w-full py-2 px-4 bg-celebra-blue hover:bg-blue-700 text-white font-medium rounded-md transition duration-200"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Carregando...' : 'Continuar'}
+          </button>
         </form>
       ) : (
         <form onSubmit={handleSubmit}>
@@ -375,11 +389,8 @@ const Register: React.FC = () => {
               placeholder="Sua senha"
               className="input-field"
               required
-              minLength={6}
             />
-            <p className="text-xs text-gray-500 mt-1">
-              A senha deve ter pelo menos 6 caracteres
-            </p>
+            <p className="text-xs text-gray-500 mt-1">Mínimo de 6 caracteres</p>
           </div>
 
           <div className="mb-6">
@@ -395,43 +406,97 @@ const Register: React.FC = () => {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              placeholder="Digite novamente"
+              placeholder="Confirme sua senha"
               className="input-field"
               required
             />
           </div>
 
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+          <div className="mb-6">
+            <label className="flex items-start">
+              <input
+                type="checkbox"
+                className="mt-1 mr-2"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                data-testid="terms-checkbox"
+              />
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Eu li e concordo com os{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowTermsModal(true)}
+                  className="text-celebra-blue hover:underline"
+                  data-testid="register-terms-link"
+                >
+                  Termos de Uso
+                </button>{' '}
+                e a{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacyModal(true)}
+                  className="text-celebra-blue hover:underline"
+                  data-testid="register-privacy-link"
+                >
+                  Política de Privacidade
+                </button>
+              </span>
+            </label>
+            {!termsAccepted && error && error.includes('termos') && (
+              <p
+                className="text-red-500 text-sm mt-1"
+                data-testid="terms-error"
+              >
+                Você precisa aceitar os termos de uso e política de privacidade
+              </p>
+            )}
+          </div>
 
-          <div className="mt-8 flex justify-between">
+          {error && !error.includes('termos') && (
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => {
-                setStep(1)
-                setError(null)
-              }}
-              className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800"
+              onClick={() => setStep(1)}
+              className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition duration-200"
             >
               Voltar
             </button>
-            <button type="submit" className="btn-primary" disabled={isLoading}>
-              {isLoading ? 'Criando...' : 'Criar Conta'}
+            <button
+              type="submit"
+              className="flex-1 py-2 px-4 bg-celebra-blue hover:bg-blue-700 text-white font-medium rounded-md transition duration-200"
+              disabled={isLoading}
+              data-testid="cadastro-button"
+            >
+              {isLoading ? 'Carregando...' : 'Criar Conta'}
             </button>
           </div>
         </form>
       )}
 
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Já tem uma conta?{' '}
-          <Link
-            to="/login"
-            className="text-celebra-blue font-medium hover:underline"
-          >
-            Faça login
-          </Link>
-        </p>
+      <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+        Já tem uma conta?{' '}
+        <Link
+          to="/login"
+          className="text-celebra-blue hover:underline font-medium"
+        >
+          Entrar
+        </Link>
       </div>
+
+      {/* Modais de Termos e Privacidade */}
+      <TermsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+      />
+      <PrivacyModal
+        isOpen={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+      />
     </div>
   )
 }

@@ -1,29 +1,137 @@
 {
-  "name": "Celebra Capital",
-  "short_name": "Celebra",
-  "description": "Plataforma de Pré-Análise de Crédito para Servidores Públicos",
-  "theme_color": "#0111a2",
+  "name": "Plataforma de Pré-Análise de Crédito - Celebra Capital",
+  "short_name": "Celebra Crédito",
+  "description": "Plataforma de análise de crédito para empresas em busca de financiamento",
+  "theme_color": "#0047AB",
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
-  "start_url": "/",
+  "start_url": ".",
+  "id": "/",
+  "lang": "pt-BR",
+  "categories": ["finance", "business"],
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png"
+    },
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Dashboard da Plataforma"
+    },
+    {
+      "src": "/screenshots/proposta-mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Criação de Proposta (Mobile)"
+    }
+  ],
   "icons": [
     {
-      "src": "pwa-192x192.png",
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
       "sizes": "192x192",
-      "type": "image/png"
+      "purpose": "any maskable"
     },
     {
-      "src": "pwa-512x512.png",
+      "src": "logo512.png",
+      "type": "image/png",
       "sizes": "512x512",
-      "type": "image/png"
+      "purpose": "any maskable"
     },
     {
-      "src": "maskable-icon.png",
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/maskable-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Nova Proposta",
+      "short_name": "Nova Proposta",
+      "description": "Iniciar uma nova proposta de crédito",
+      "url": "/propostas/nova",
+      "icons": [
+        { "src": "/icons/shortcut-nova-proposta.png", "sizes": "192x192" }
+      ]
+    },
+    {
+      "name": "Propostas Recentes",
+      "short_name": "Propostas",
+      "description": "Ver propostas mais recentes",
+      "url": "/propostas",
+      "icons": [{ "src": "/icons/shortcut-propostas.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "dir": "ltr",
+  "display_override": ["standalone", "window-controls-overlay"],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

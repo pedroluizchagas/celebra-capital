@@ -3,6 +3,7 @@ import notificationService, {
   Notification as NotificationType,
   UserNotificationSettings,
 } from '../services/notificationService'
+import websocketService from '../services/websocketService'
 import { useAuth } from './AuthContext'
 
 interface NotificationContextType {
@@ -10,65 +11,37 @@ interface NotificationContextType {
   unreadCount: number
   isLoading: boolean
   settings: UserNotificationSettings | null
-  markAsRead: (id: number) => Promise<void>
+  markAsRead: (id: string) => Promise<void>
   markAllAsRead: () => Promise<void>
   loadNotifications: () => Promise<void>
   updateSettings: (settings: Partial<UserNotificationSettings>) => Promise<void>
-  registerForPushNotifications: () => Promise<void>
+  registerForPushNotifications: () => Promise<boolean>
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
   undefined
 )
 
-export const useNotifications = () => {
-  const context = useContext(NotificationContext)
-  if (context === undefined) {
-    throw new Error(
-      'useNotifications deve ser usado dentro de um NotificationProvider'
-    )
-  }
-  return context
-}
-
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { isAuthenticated } = useAuth()
   const [notifications, setNotifications] = useState<NotificationType[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [settings, setSettings] = useState<UserNotificationSettings | null>(
     null
   )
+  const { user } = useAuth()
 
-  // Carregar notificações quando o usuário estiver autenticado
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadNotifications()
-      loadUnreadCount()
-      loadSettings()
-    } else {
-      setNotifications([])
-      setUnreadCount(0)
-      setSettings(null)
-    }
-  }, [isAuthenticated])
-
-  // Atualizar contagem de não lidas a cada 1 minuto
-  useEffect(() => {
-    if (!isAuthenticated) return
-
-    const interval = setInterval(loadUnreadCount, 60000)
-    return () => clearInterval(interval)
-  }, [isAuthenticated])
-
+  // Carregar notificações
   const loadNotifications = async () => {
-    if (!isAuthenticated) return
+    if (!user) return
+
     setIsLoading(true)
     try {
-      const data = await notificationService.getNotifications()
-      setNotifications(data)
+      const response = await notificationService.getNotifications()
+      setNotifications(response.results)
+      setUnreadCount(response.unread_count)
     } catch (error) {
       console.error('Erro ao carregar notificações:', error)
     } finally {
@@ -76,30 +49,61 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }
 
-  const loadUnreadCount = async () => {
-    if (!isAuthenticated) return
-    try {
-      const count = await notificationService.getUnreadCount()
-      setUnreadCount(count)
-    } catch (error) {
-      console.error(
-        'Erro ao carregar contagem de notificações não lidas:',
-        error
-      )
-    }
-  }
-
+  // Carregar configurações de notificação
   const loadSettings = async () => {
-    if (!isAuthenticated) return
+    if (!user) return
+
     try {
-      const settings = await notificationService.getSettings()
-      setSettings(settings)
+      const userSettings = await notificationService.getNotificationSettings()
+      setSettings(userSettings)
     } catch (error) {
-      console.error('Erro ao carregar configurações de notificação:', error)
+      console.error('Erro ao carregar configurações de notificações:', error)
     }
   }
 
-  const markAsRead = async (id: number) => {
+  // Inicializar WebSocket para notificações em tempo real
+  const initializeWebSocket = async () => {
+    if (!user || !user.id) return
+
+    try {
+      await websocketService.connect(user.id.toString())
+
+      // Escutar por novas notificações
+      websocketService.on('notification', (message) => {
+        // Adicionar nova notificação à lista
+        const newNotification = message.notification
+        setNotifications((prev) => [newNotification, ...prev])
+        setUnreadCount((prev) => prev + 1)
+
+        // Exibir notificação no navegador (se permitido)
+        showBrowserNotification(newNotification)
+      })
+
+      // Reconectar quando o estado de conexão mudar
+      websocketService.on('disconnected', () => {
+        console.log(
+          'Desconectado do serviço de notificações. Tentando reconectar...'
+        )
+      })
+    } catch (error) {
+      console.error('Erro ao inicializar WebSocket:', error)
+    }
+  }
+
+  // Exibir notificação no navegador
+  const showBrowserNotification = (notification: any) => {
+    if (!('Notification' in window)) return
+
+    if (Notification.permission === 'granted') {
+      new Notification(notification.title, {
+        body: notification.content,
+        icon: '/favicon.ico',
+      })
+    }
+  }
+
+  // Marcar notificação como lida
+  const markAsRead = async (id: string) => {
     try {
       await notificationService.markAsRead(id)
 
@@ -107,96 +111,90 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       setNotifications((prev) =>
         prev.map((notification) =>
           notification.id === id
-            ? { ...notification, read: true, read_at: new Date().toISOString() }
+            ? { ...notification, isRead: true }
             : notification
         )
       )
 
-      // Atualizar contagem
-      loadUnreadCount()
+      // Atualizar contador de não lidas
+      setUnreadCount((prev) => Math.max(0, prev - 1))
+
+      // Informar ao WebSocket que a notificação foi lida
+      websocketService.sendMessage({
+        type: 'mark_read',
+        notification_id: id,
+      })
     } catch (error) {
-      console.error(`Erro ao marcar notificação ${id} como lida:`, error)
+      console.error('Erro ao marcar notificação como lida:', error)
     }
   }
 
+  // Marcar todas notificações como lidas
   const markAllAsRead = async () => {
     try {
       await notificationService.markAllAsRead()
 
       // Atualizar estado local
       setNotifications((prev) =>
-        prev.map((notification) => ({
-          ...notification,
-          read: true,
-          read_at: notification.read_at || new Date().toISOString(),
-        }))
+        prev.map((notification) => ({ ...notification, isRead: true }))
       )
-
-      // Atualizar contagem
       setUnreadCount(0)
     } catch (error) {
       console.error('Erro ao marcar todas notificações como lidas:', error)
     }
   }
 
+  // Atualizar configurações de notificação
   const updateSettings = async (
-    updatedSettings: Partial<UserNotificationSettings>
+    newSettings: Partial<UserNotificationSettings>
   ) => {
     try {
-      const newSettings = await notificationService.updateSettings(
-        updatedSettings
-      )
-      setSettings(newSettings)
+      const updatedSettings =
+        await notificationService.updateNotificationSettings(newSettings)
+      setSettings(updatedSettings)
     } catch (error) {
-      console.error('Erro ao atualizar configurações de notificação:', error)
+      console.error('Erro ao atualizar configurações de notificações:', error)
     }
   }
 
-  const registerForPushNotifications = async () => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn('Notificações push não são suportadas neste navegador')
-      return
-    }
-
+  // Registrar para notificações push
+  const registerForPushNotifications = async (): Promise<boolean> => {
     try {
-      // Registrar service worker
-      const registration = await navigator.serviceWorker.register(
-        '/service-worker.js'
-      )
+      // Solicitar permissão para notificações do navegador
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission()
 
-      // Verificar permissão
-      const permission = await window.Notification.requestPermission()
-      if (permission !== 'granted') {
-        console.warn('Permissão para notificações negada')
-        return
+        if (permission === 'granted') {
+          // Registrar service worker para push notifications
+          const registration = await navigator.serviceWorker.register(
+            '/service-worker.js'
+          )
+
+          // Obter assinatura push ou criar uma nova
+          const pushSubscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(
+              process.env.REACT_APP_VAPID_PUBLIC_KEY || ''
+            ),
+          })
+
+          // Enviar assinatura para o backend
+          await notificationService.registerPushSubscription(
+            JSON.stringify(pushSubscription)
+          )
+
+          return true
+        }
       }
-
-      // Obter a chave pública do ambiente do Vite (definida em .env.local)
-      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || ''
-
-      // Criar inscrição de push
-      const pushSubscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-      })
-
-      // Salvar inscrição no servidor
-      await notificationService.savePushSubscription(pushSubscription)
-
-      // Atualizar configurações locais
-      if (settings) {
-        setSettings({
-          ...settings,
-          push_notifications: true,
-        })
-      }
+      return false
     } catch (error) {
       console.error('Erro ao registrar para notificações push:', error)
+      return false
     }
   }
 
-  // Função auxiliar para converter chave VAPID para formato correto
-  function urlBase64ToUint8Array(base64String: string) {
+  // Converter chave VAPID para o formato correto
+  const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
     const base64 = (base64String + padding)
       .replace(/-/g, '+')
@@ -208,8 +206,30 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     for (let i = 0; i < rawData.length; ++i) {
       outputArray[i] = rawData.charCodeAt(i)
     }
+
     return outputArray
   }
+
+  // Efeito para carregar notificações e configurações quando o usuário muda
+  useEffect(() => {
+    if (user) {
+      loadNotifications()
+      loadSettings()
+      initializeWebSocket()
+    } else {
+      // Fechar WebSocket quando o usuário sair
+      websocketService.closeConnection()
+      setNotifications([])
+      setUnreadCount(0)
+      setSettings(null)
+    }
+
+    // Limpar listener do WebSocket ao desmontar
+    return () => {
+      websocketService.off('notification', () => {})
+      websocketService.off('disconnected', () => {})
+    }
+  }, [user])
 
   const value = {
     notifications,
@@ -228,6 +248,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       {children}
     </NotificationContext.Provider>
   )
+}
+
+export const useNotifications = (): NotificationContextType => {
+  const context = useContext(NotificationContext)
+  if (context === undefined) {
+    throw new Error(
+      'useNotifications deve ser usado dentro de um NotificationProvider'
+    )
+  }
+  return context
 }
 
 export default NotificationContext

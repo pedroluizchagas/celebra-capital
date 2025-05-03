@@ -1,0 +1,66 @@
+# Django
+Django==4.2.6
+djangorestframework==3.14.0
+django-cors-headers==4.3.0
+django-filter==23.3
+django-environ>=0.8.0,<1.0.0
+Django>=3.2,<4.0
+djangorestframework>=3.13.1,<4.0
+django-cors-headers>=3.13.0,<4.0
+django-filter>=22.1,<23.0
+django-environ>=0.8.0,<1.0.0
+djangorestframework-simplejwt>=5.2.0,<6.0
+
+# Django Channels para WebSockets
+channels>=3.0.5,<4.0
+channels-redis>=3.4.1,<4.0
+daphne>=3.0.2,<4.0
+
+# Celery e Redis para processamento assíncrono
+celery>=5.2.7,<6.0
+redis>=4.3.4,<5.0
+django-celery-results>=2.4.0,<3.0
+django-celery-beat>=2.4.0,<3.0
+flower>=1.2.0,<2.0  # UI para monitoramento de tarefas Celery
+
+# Bancos de dados
+psycopg2-binary>=2.9.3,<3.0
+dj-database-url>=0.5.0,<1.0.0
+
+# Processamento OCR
+pytesseract>=0.3.8,<0.4.0
+pillow>=9.1.1,<10.0
+
+# Monitoramento e logging
+sentry-sdk>=1.9.0,<2.0
+structlog>=22.1.0,<23.0
+python-json-logger>=2.0.2,<3.0.0
+
+# Produção
+gunicorn>=20.1.0,<21.0
+whitenoise>=6.2.0,<7.0
+
+# Desenvolvimento
+pylint>=2.11.0,<3.0.0
+black>=21.11b0,<22.0.0
+isort>=5.10.0,<6.0.0
+flake8>=4.0.0,<5.0.0
+pytest>=7.1.2,<8.0
+pytest-django>=4.5.2,<5.0
+pytest-cov>=2.12.1,<3.0.0
+pytest-mock>=3.8.2,<4.0
+factory-boy>=3.2.1,<4.0
+
+# Armazenamento
+django-storages>=1.12.3,<2.0
+boto3>=1.24.22,<2.0
+
+# Utilitários
+python-dotenv>=0.20.0,<1.0
+
+# Google Cloud Vision
+google-cloud-vision>=3.1.1,<4.0
+
+# Backup e Disaster Recovery
+python-dateutil>=2.8.2
+python-magic>=0.4.27 

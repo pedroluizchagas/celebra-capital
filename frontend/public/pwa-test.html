@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teste de PWA - Celebra Capital</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" href="/icons/favicon.ico" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0066cc" />
+    <style>
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        margin: 0;
+        padding: 0;
+        color: #333;
+        background-color: #f5f8fc;
+      }
+
+      header {
+        background-color: #0066cc;
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.8rem;
+      }
+
+      main {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      h2 {
+        color: #0066cc;
+        margin-top: 0;
+      }
+
+      .icons-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+      }
+
+      .icon-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      .icon-item img {
+        max-width: 100%;
+        border: 1px solid #eee;
+        border-radius: 8px;
+      }
+
+      .icon-item p {
+        margin: 5px 0;
+        font-size: 0.8rem;
+      }
+
+      .test-area {
+        background-color: #e8f4fd;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+
+      button {
+        background-color: #0066cc;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        margin-right: 10px;
+        margin-bottom: 10px;
+      }
+
+      button:hover {
+        background-color: #0055aa;
+      }
+
+      .status {
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+
+      .success {
+        background-color: #e6ffed;
+        color: #1a7f37;
+        border: 1px solid #b4e8ca;
+      }
+
+      .warning {
+        background-color: #fff8e1;
+        color: #b45309;
+        border: 1px solid #f9e3a2;
+      }
+
+      .error {
+        background-color: #ffebee;
+        color: #e53935;
+        border: 1px solid #ffcdd2;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+
+      table,
+      th,
+      td {
+        border: 1px solid #ddd;
+      }
+
+      th,
+      td {
+        padding: 8px 12px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f5f5f5;
+      }
+
+      footer {
+        text-align: center;
+        padding: 20px;
+        font-size: 0.9rem;
+        color: #666;
+        border-top: 1px solid #ddd;
+        margin-top: 40px;
+      }
+
+      @media (max-width: 600px) {
+        .icons-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Teste de PWA - Celebra Capital</h1>
+    </header>
+
+    <main>
+      <div class="card">
+        <h2>Verificação de Ícones</h2>
+        <p>
+          Esta página testa se todos os ícones necessários para o PWA estão
+          corretamente configurados.
+        </p>
+
+        <div class="icons-grid" id="iconsGrid">
+          <!-- Preenchido via JavaScript -->
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Recursos do PWA</h2>
+        <p>Vamos testar os principais recursos do PWA:</p>
+
+        <div class="test-area">
+          <button id="btnCheckInstall">Verificar Instalação</button>
+          <button id="btnTestOffline">Testar Modo Offline</button>
+          <button id="btnCheckStorage">Verificar Cache</button>
+          <div id="pwaStatus"></div>
+        </div>
+
+        <table>
+          <tr>
+            <th>Recurso</th>
+            <th>Status</th>
+          </tr>
+          <tr>
+            <td>Service Worker</td>
+            <td id="swStatus">Verificando...</td>
+          </tr>
+          <tr>
+            <td>Manifest</td>
+            <td id="manifestStatus">Verificando...</td>
+          </tr>
+          <tr>
+            <td>Cache Storage</td>
+            <td id="cacheStatus">Verificando...</td>
+          </tr>
+          <tr>
+            <td>IndexedDB</td>
+            <td id="dbStatus">Verificando...</td>
+          </tr>
+          <tr>
+            <td>Instalável</td>
+            <td id="installableStatus">Verificando...</td>
+          </tr>
+        </table>
+      </div>
+    </main>
+
+    <footer>Celebra Capital - Teste de PWA</footer>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        // Lista de ícones a serem verificados
+        const icons = [
+          { name: 'icon-72x72.png', size: '72x72' },
+          { name: 'icon-96x96.png', size: '96x96' },
+          { name: 'icon-128x128.png', size: '128x128' },
+          { name: 'icon-144x144.png', size: '144x144' },
+          { name: 'icon-152x152.png', size: '152x152' },
+          { name: 'icon-192x192.png', size: '192x192' },
+          { name: 'icon-384x384.png', size: '384x384' },
+          { name: 'icon-512x512.png', size: '512x512' },
+          { name: 'maskable-icon.png', size: '512x512 (Maskable)' },
+          { name: 'apple-touch-icon.png', size: '180x180 (Apple)' },
+          { name: 'favicon.ico', size: 'Favicon' },
+        ]
+
+        const iconsGrid = document.getElementById('iconsGrid')
+
+        // Carregar e exibir ícones
+        icons.forEach((icon) => {
+          const iconContainer = document.createElement('div')
+          iconContainer.className = 'icon-item'
+
+          const img = document.createElement('img')
+          img.src = `/icons/${icon.name}`
+          img.alt = icon.name
+          img.onerror = () => {
+            img.style.display = 'none'
+            iconContainer.classList.add('error')
+            const errorMsg = document.createElement('p')
+            errorMsg.textContent = 'Não encontrado'
+            errorMsg.style.color = '#e53935'
+            iconContainer.appendChild(errorMsg)
+          }
+
+          const name = document.createElement('p')
+          name.textContent = icon.name
+
+          const size = document.createElement('p')
+          size.textContent = icon.size
+          size.style.fontSize = '0.7rem'
+          size.style.color = '#666'
+
+          iconContainer.appendChild(img)
+          iconContainer.appendChild(name)
+          iconContainer.appendChild(size)
+          iconsGrid.appendChild(iconContainer)
+        })
+
+        // Verificar status do Service Worker
+        checkServiceWorker()
+
+        // Verificar Manifest
+        checkManifest()
+
+        // Verificar Cache e IndexedDB
+        checkStorageAPIs()
+
+        // Verificar instalabilidade
+        checkInstallability()
+
+        // Event listeners para botões
+        document
+          .getElementById('btnCheckInstall')
+          .addEventListener('click', checkInstallability)
+        document
+          .getElementById('btnTestOffline')
+          .addEventListener('click', testOfflineMode)
+        document
+          .getElementById('btnCheckStorage')
+          .addEventListener('click', checkStorageAPIs)
+      })
+
+      // Função para verificar Service Worker
+      function checkServiceWorker() {
+        const swStatus = document.getElementById('swStatus')
+
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker
+            .getRegistration()
+            .then((registration) => {
+              if (registration) {
+                swStatus.textContent = 'Ativo ✓'
+                swStatus.className = 'success'
+              } else {
+                swStatus.textContent = 'Não registrado'
+                swStatus.className = 'warning'
+              }
+            })
+            .catch((error) => {
+              swStatus.textContent = 'Erro: ' + error
+              swStatus.className = 'error'
+            })
+        } else {
+          swStatus.textContent = 'Não suportado'
+          swStatus.className = 'error'
+        }
+      }
+
+      // Função para verificar Manifest
+      function checkManifest() {
+        const manifestStatus = document.getElementById('manifestStatus')
+
+        const manifestLink = document.querySelector('link[rel="manifest"]')
+        if (!manifestLink) {
+          manifestStatus.textContent = 'Manifest não encontrado'
+          manifestStatus.className = 'error'
+          return
+        }
+
+        fetch(manifestLink.href)
+          .then((response) => {
+            if (response.ok) {
+              return response.json().then((data) => {
+                if (data.icons && data.icons.length > 0) {
+                  manifestStatus.textContent = 'Válido ✓'
+                  manifestStatus.className = 'success'
+                } else {
+                  manifestStatus.textContent = 'Ícones ausentes no manifest'
+                  manifestStatus.className = 'warning'
+                }
+              })
+            } else {
+              manifestStatus.textContent = 'Erro ao carregar manifest'
+              manifestStatus.className = 'error'
+            }
+          })
+          .catch((error) => {
+            manifestStatus.textContent = 'Erro: ' + error
+            manifestStatus.className = 'error'
+          })
+      }
+
+      // Função para verificar Cache e IndexedDB
+      function checkStorageAPIs() {
+        const cacheStatus = document.getElementById('cacheStatus')
+        const dbStatus = document.getElementById('dbStatus')
+
+        // Verificar Cache API
+        if ('caches' in window) {
+          caches
+            .keys()
+            .then((cacheNames) => {
+              if (cacheNames.length > 0) {
+                cacheStatus.textContent = `${cacheNames.length} caches encontrados ✓`
+                cacheStatus.className = 'success'
+              } else {
+                cacheStatus.textContent = 'Nenhum cache encontrado'
+                cacheStatus.className = 'warning'
+              }
+            })
+            .catch((error) => {
+              cacheStatus.textContent = 'Erro: ' + error
+              cacheStatus.className = 'error'
+            })
+        } else {
+          cacheStatus.textContent = 'Não suportado'
+          cacheStatus.className = 'error'
+        }
+
+        // Verificar IndexedDB
+        if ('indexedDB' in window) {
+          const request = indexedDB.open('celebra-offline-db', 1)
+
+          request.onsuccess = function (event) {
+            const db = event.target.result
+            const objectStoreNames = Array.from(db.objectStoreNames)
+            db.close()
+
+            if (objectStoreNames.length > 0) {
+              dbStatus.textContent = `${objectStoreNames.length} stores encontrados ✓`
+              dbStatus.className = 'success'
+            } else {
+              dbStatus.textContent = 'Banco de dados vazio'
+              dbStatus.className = 'warning'
+            }
+          }
+
+          request.onerror = function (event) {
+            dbStatus.textContent = 'Erro ao acessar banco de dados'
+            dbStatus.className = 'error'
+          }
+
+          request.onupgradeneeded = function (event) {
+            const db = event.target.result
+            db.close()
+            dbStatus.textContent = 'Banco de dados criado'
+            dbStatus.className = 'success'
+          }
+        } else {
+          dbStatus.textContent = 'Não suportado'
+          dbStatus.className = 'error'
+        }
+      }
+
+      // Função para verificar instalabilidade
+      function checkInstallability() {
+        const installableStatus = document.getElementById('installableStatus')
+        const pwaStatus = document.getElementById('pwaStatus')
+
+        // Verificar se já está instalado
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+          installableStatus.textContent = 'Já instalado ✓'
+          installableStatus.className = 'success'
+
+          pwaStatus.textContent = 'O aplicativo já está instalado como PWA.'
+          pwaStatus.className = 'status success'
+          return
+        }
+
+        // Verificar requisitos para instalabilidade
+        let checks = {
+          sw: false,
+          manifest: false,
+          https: false,
+        }
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistration().then((registration) => {
+            checks.sw = !!registration
+            updateInstallabilityStatus()
+          })
+        }
+
+        // Manifest
+        const manifestLink = document.querySelector('link[rel="manifest"]')
+        if (manifestLink) {
+          fetch(manifestLink.href).then((response) => {
+            if (response.ok) {
+              return response.json().then((data) => {
+                checks.manifest = !!(
+                  data.icons &&
+                  data.icons.length > 0 &&
+                  data.name
+                )
+                updateInstallabilityStatus()
+              })
+            }
+          })
+        }
+
+        // HTTPS
+        checks.https =
+          window.location.protocol === 'https:' ||
+          window.location.hostname === 'localhost'
+
+        function updateInstallabilityStatus() {
+          if (checks.sw && checks.manifest && checks.https) {
+            installableStatus.textContent = 'Instalável ✓'
+            installableStatus.className = 'success'
+
+            pwaStatus.innerHTML =
+              'Este aplicativo pode ser instalado como PWA.<br>' +
+              'Procure o botão "Instalar" na barra de endereço do navegador ou use o menu de opções.'
+            pwaStatus.className = 'status success'
+          } else {
+            const missing = []
+            if (!checks.sw) missing.push('Service Worker não registrado')
+            if (!checks.manifest)
+              missing.push('Manifest inválido ou incompleto')
+            if (!checks.https) missing.push('Não está usando HTTPS')
+
+            installableStatus.textContent = 'Não instalável'
+            installableStatus.className = 'error'
+
+            pwaStatus.innerHTML =
+              `O aplicativo não pode ser instalado como PWA.<br>Problemas encontrados:<br>` +
+              missing.map((item) => `- ${item}`).join('<br>')
+            pwaStatus.className = 'status error'
+          }
+        }
+
+        updateInstallabilityStatus()
+      }
+
+      // Função para testar modo offline
+      function testOfflineMode() {
+        const pwaStatus = document.getElementById('pwaStatus')
+
+        pwaStatus.textContent = 'Testando modo offline...'
+        pwaStatus.className = 'status'
+
+        // Forçar recarregamento para verificar recursos offline
+        if (
+          'serviceWorker' in navigator &&
+          navigator.serviceWorker.controller
+        ) {
+          // Simular modo offline desabilitando o fetch
+          const originalFetch = window.fetch
+          window.fetch = function () {
+            return Promise.reject(new Error('Offline Test'))
+          }
+
+          // Tentar buscar recursos em cache
+          setTimeout(() => {
+            // Restaurar fetch original
+            window.fetch = originalFetch
+
+            pwaStatus.innerHTML =
+              'Teste de modo offline concluído.<br>' +
+              'Se esta página continuar visível, o cache está funcionando corretamente.'
+            pwaStatus.className = 'status success'
+          }, 3000)
+        } else {
+          pwaStatus.textContent =
+            'Não é possível testar o modo offline sem um Service Worker ativo.'
+          pwaStatus.className = 'status warning'
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -8,6 +8,8 @@ interface OcrResult {
   error_message?: string
   created_at: string
   updated_at: string
+  current_progress: number
+  retry_count: number
 }
 
 interface DocumentValidationResult {
@@ -16,6 +18,10 @@ interface DocumentValidationResult {
   validation_errors?: string[]
   confidence_score: number
 }
+
+// Cache local para evitar chamadas repetidas
+const ocrStatusCache: Record<number, { timestamp: number; data: any }> = {}
+const CACHE_TIMEOUT = 1000 // 1 segundo
 
 const ocrService = {
   /**
@@ -33,12 +39,35 @@ const ocrService = {
 
   /**
    * Verificar status de processamento OCR
+   * Usa cache para evitar chamadas repetidas em curto intervalo
    */
   checkOcrStatus: async (
     documentId: number
   ): Promise<{ complete: boolean; progress?: number }> => {
     try {
+      const now = Date.now()
+      const cachedData = ocrStatusCache[documentId]
+
+      // Usar cache se disponível e não expirado
+      if (cachedData && now - cachedData.timestamp < CACHE_TIMEOUT) {
+        return cachedData.data
+      }
+
       const response = await api.get(`/documents/${documentId}/ocr/status/`)
+
+      // Salvar no cache
+      ocrStatusCache[documentId] = {
+        timestamp: now,
+        data: response.data,
+      }
+
+      // Limpar cache quando o processamento estiver completo
+      if (response.data.complete) {
+        setTimeout(() => {
+          delete ocrStatusCache[documentId]
+        }, CACHE_TIMEOUT)
+      }
+
       return response.data
     } catch (error) {
       console.error('Erro ao verificar status de OCR:', error)
@@ -79,6 +108,19 @@ const ocrService = {
     } catch (error) {
       console.error('Erro ao extrair texto do documento:', error)
       throw error
+    }
+  },
+
+  /**
+   * Limpar cache local
+   */
+  clearCache: (documentId?: number) => {
+    if (documentId) {
+      delete ocrStatusCache[documentId]
+    } else {
+      Object.keys(ocrStatusCache).forEach((key) => {
+        delete ocrStatusCache[parseInt(key)]
+      })
     }
   },
 }

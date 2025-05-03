@@ -1,170 +1,276 @@
-import React from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import React, {
+  lazy,
+  Suspense,
+  useState,
+  useEffect,
+  memo,
+  useCallback,
+} from 'react'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import * as Sentry from '@sentry/react'
-import { useState, useEffect } from 'react'
+import './styles/globals.css'
+import './styles/a11y.css'
 
-// Importar componentes de autenticação
-import { AuthProvider } from './contexts/AuthContext'
+// Importar componente de rota privada
 import PrivateRoute from './components/PrivateRoute'
-import Navbar from './components/Navbar'
+import RealtimeNotifications from './components/notifications/RealtimeNotifications'
 
-// Importar páginas
-import FormFlow from './pages/FormFlow'
-import DocumentUpload from './pages/DocumentUpload'
-import Signature from './pages/Signature'
-import Success from './pages/Success'
-import Login from './pages/Login'
-import Register from './pages/Register'
+// Layouts
+import AdminLayout from './layouts/AdminLayout'
+import MainLayout from './layouts/MainLayout'
 
-// Importar componentes do dashboard administrativo
-import AdminDashboard from './pages/admin/Dashboard'
-import ProposalList from './pages/admin/ProposalList'
-import ProposalDetails from './pages/admin/ProposalDetails'
-import Reports from './pages/admin/Reports'
+// Lazy loading para páginas
+const Home = lazy(() => import('./pages/Home'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const PreAnalyseForm = lazy(() => import('./pages/PreAnalyseForm'))
+const Profile = lazy(() => import('./pages/Profile'))
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'))
+const UserManagement = lazy(() => import('./pages/admin/UserManagement'))
+const Reports = lazy(() => import('./pages/admin/Reports'))
+const Notifications = lazy(() => import('./pages/admin/Notifications'))
+const ProposalDetails = lazy(() => import('./pages/admin/ProposalDetails'))
+const TermsAndPolicies = lazy(() => import('./pages/TermsAndPolicies'))
+const RecoverPassword = lazy(() => import('./pages/RecoverPassword'))
+const AnalyticsDashboard = lazy(() => import('./pages/admin/Analytics'))
+const PasswordResetRequest = lazy(() => import('./pages/PasswordResetRequest'))
+const PasswordReset = lazy(() => import('./pages/PasswordReset'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+const TermsOfUse = lazy(() => import('./pages/TermsOfUse'))
+const UsersPage = lazy(() => import('./pages/admin/Users'))
 
-// Adicionar a importação para o NotificationProvider e a página de notificações
-import { NotificationProvider } from './contexts/NotificationContext'
-import NotificationsPage from './pages/Notifications'
-
-// Importar o ErrorProvider
-import { ErrorProvider } from './contexts/ErrorContext'
-import ErrorDisplay from './components/ErrorDisplay'
+// Componentes de acessibilidade
+import SkipLinks from './components/a11y/SkipLinks'
+import AccessibilityToggle from './components/a11y/AccessibilityToggle'
+import AccessibilityAnnouncer from './components/a11y/AccessibilityAnnouncer'
 
 // Componente de fallback para o ErrorBoundary do Sentry
 const FallbackComponent = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-100">
-    <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-red-600 mb-4">
-          Algo deu errado
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Ocorreu um erro inesperado na aplicação. Nossa equipe foi notificada e
-          estamos trabalhando na solução.
-        </p>
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-200"
-          onClick={() => (window.location.href = '/')}
-        >
-          Voltar para a página inicial
-        </button>
-      </div>
-    </div>
+  <div className="error-boundary">
+    <h1>Ocorreu um erro inesperado</h1>
+    <p>
+      Estamos trabalhando para resolver o problema. Por favor, tente novamente
+      em alguns instantes.
+    </p>
   </div>
 )
 
+// Componente para página de loading durante lazy loading
+const LoadingPage = () => (
+  <div className="loading-page">
+    <div className="spinner"></div>
+    <p>Carregando...</p>
+  </div>
+)
+
+// Configuração do Sentry
+Sentry.init({
+  dsn: process.env.REACT_APP_SENTRY_DSN,
+  integrations: [
+    new Sentry.BrowserTracing({
+      // Configuração de roteamento do Sentry
+      routingInstrumentation: Sentry.reactRouterV6Instrumentation(
+        React.useEffect,
+        useLocation
+      ),
+    }),
+    new Sentry.Replay(),
+  ],
+  // Configurações de performance
+  tracesSampleRate: 0.5,
+  // Configurações de replay de sessão
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+})
+
+/**
+ * Componente principal da aplicação
+ * Configura as rotas e adiciona componentes de acessibilidade globais
+ */
 function App() {
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    const savedMode = localStorage.getItem('darkMode')
+    return savedMode === 'true'
+  })
 
+  // Efeito para alternar entre modo claro/escuro
   useEffect(() => {
-    // Verificar preferência do usuário para dark mode
-    const isDarkMode = localStorage.getItem('darkMode') === 'true'
-    setDarkMode(isDarkMode)
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark')
-    }
-  }, [])
-
-  const toggleDarkMode = () => {
-    const newMode = !darkMode
-    setDarkMode(newMode)
-    localStorage.setItem('darkMode', String(newMode))
-    if (newMode) {
+    if (darkMode) {
       document.documentElement.classList.add('dark')
     } else {
       document.documentElement.classList.remove('dark')
     }
-  }
+    localStorage.setItem('darkMode', darkMode.toString())
+  }, [darkMode])
+
+  // Configuração inicial de acessibilidade
+  useEffect(() => {
+    // Adicionar IDs importantes para acessibilidade
+    document.querySelector('main')?.setAttribute('id', 'main-content')
+    document.querySelector('nav')?.setAttribute('id', 'main-nav')
+
+    // Definir atributos de linguagem
+    document.documentElement.lang = 'pt-BR'
+
+    // Verificar configurações de acessibilidade salvas
+    const highContrast = localStorage.getItem('a11y-high-contrast') === 'true'
+    const fontSize = localStorage.getItem('a11y-font-size') || '100'
+
+    // Aplicar configurações
+    if (highContrast) {
+      document.documentElement.classList.add('high-contrast')
+    }
+
+    if (fontSize !== '100') {
+      document.documentElement.classList.add(`font-size-${fontSize}`)
+    }
+  }, [])
 
   return (
-    <Sentry.ErrorBoundary fallback={FallbackComponent}>
-      <ErrorProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <BrowserRouter>
-              <ErrorDisplay />
-              <Routes>
-                <Route path="/" element={<Login />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+    <div className="app-wrapper">
+      {/* Skip links para navegação por teclado */}
+      <SkipLinks />
+
+      {/* Componente para anúncios acessíveis */}
+      <AccessibilityAnnouncer />
+
+      <Sentry.ErrorBoundary fallback={<FallbackComponent />}>
+        <BrowserRouter>
+          {/* Componente de notificações em tempo real */}
+          <RealtimeNotifications />
+
+          {/* Painel de acessibilidade */}
+          <AccessibilityToggle />
+
+          <Suspense fallback={<LoadingPage />}>
+            <Routes>
+              {/* Rotas públicas */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/cadastro" element={<Register />} />
+              <Route
+                path="/termos-e-politicas"
+                element={<TermsAndPolicies />}
+              />
+              <Route path="/recuperar-senha" element={<RecoverPassword />} />
+              <Route
+                path="/solicitar-recuperacao"
+                element={<PasswordResetRequest />}
+              />
+              <Route
+                path="/redefinir-senha/:uid/:token"
+                element={<PasswordReset />}
+              />
+              <Route
+                path="/politica-de-privacidade"
+                element={<PrivacyPolicy />}
+              />
+              <Route path="/termos-de-uso" element={<TermsOfUse />} />
+
+              {/* Rotas privadas com layout principal */}
+              <Route
+                path="/"
+                element={
+                  <MainLayout darkMode={darkMode} setDarkMode={setDarkMode} />
+                }
+              >
                 <Route
-                  path="/upload-documents"
+                  index
                   element={
                     <PrivateRoute>
-                      <DocumentUpload />
+                      <Home />
                     </PrivateRoute>
                   }
                 />
                 <Route
-                  path="/form"
+                  path="pre-analise"
                   element={
                     <PrivateRoute>
-                      <FormFlow />
+                      <PreAnalyseForm />
                     </PrivateRoute>
                   }
                 />
                 <Route
-                  path="/signature"
+                  path="perfil"
                   element={
                     <PrivateRoute>
-                      <Signature />
+                      <Profile />
                     </PrivateRoute>
                   }
                 />
+              </Route>
+
+              {/* Rotas do admin com layout de admin */}
+              <Route
+                path="/admin"
+                element={
+                  <AdminLayout darkMode={darkMode} setDarkMode={setDarkMode} />
+                }
+              >
                 <Route
-                  path="/success"
+                  index
                   element={
                     <PrivateRoute>
-                      <Success />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/notifications"
-                  element={
-                    <PrivateRoute>
-                      <NotificationsPage />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/admin/dashboard"
-                  element={
-                    <PrivateRoute adminOnly>
                       <AdminDashboard />
                     </PrivateRoute>
                   }
                 />
                 <Route
-                  path="/admin/proposals"
+                  path="usuarios"
                   element={
-                    <PrivateRoute adminOnly>
-                      <ProposalList />
+                    <PrivateRoute>
+                      <UserManagement />
                     </PrivateRoute>
                   }
                 />
                 <Route
-                  path="/admin/proposals/:id"
+                  path="relatorios"
                   element={
-                    <PrivateRoute adminOnly>
+                    <PrivateRoute>
+                      <Reports />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="analytics"
+                  element={
+                    <PrivateRoute>
+                      <AnalyticsDashboard />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="notifications"
+                  element={
+                    <PrivateRoute>
+                      <Notifications />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="proposals/:id"
+                  element={
+                    <PrivateRoute>
                       <ProposalDetails />
                     </PrivateRoute>
                   }
                 />
                 <Route
-                  path="/admin/reports"
+                  path="users"
                   element={
-                    <PrivateRoute adminOnly>
-                      <Reports />
+                    <PrivateRoute>
+                      <UsersPage />
                     </PrivateRoute>
                   }
                 />
-              </Routes>
-            </BrowserRouter>
-          </NotificationProvider>
-        </AuthProvider>
-      </ErrorProvider>
-    </Sentry.ErrorBoundary>
+              </Route>
+
+              {/* Rota para página não encontrada */}
+              <Route path="*" element={<div>Página não encontrada</div>} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </Sentry.ErrorBoundary>
+    </div>
   )
 }
 

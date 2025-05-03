@@ -18,10 +18,12 @@ const Button: React.FC<ButtonProps> = ({
   const baseStyles = 'rounded-md font-medium focus:outline-none transition-all'
 
   const variantStyles = {
-    primary: 'bg-celebra-blue text-white hover:bg-opacity-90',
-    secondary: 'bg-celebra-orange text-white hover:bg-opacity-90',
+    primary:
+      'bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-800 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-primary-400 dark:focus:ring-offset-gray-900',
+    secondary:
+      'bg-secondary-600 text-white hover:bg-secondary-700 dark:bg-secondary-700 dark:hover:bg-secondary-800 focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2 dark:focus:ring-secondary-400 dark:focus:ring-offset-gray-900',
     outline:
-      'border border-celebra-blue text-celebra-blue hover:bg-celebra-blue hover:bg-opacity-10',
+      'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-primary-400 dark:focus:ring-offset-gray-900',
   }
 
   const sizeStyles = {

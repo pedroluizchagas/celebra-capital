@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Celebra Capital - Modo Offline</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0066cc" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/icons/favicon-32x32.png"
+    />
+
+    <style>
+      :root {
+        --primary-color: #0066cc;
+        --secondary-color: #004080;
+        --text-color: #333333;
+        --background-color: #f5f7fa;
+        --error-color: #e74c3c;
+        --success-color: #2ecc71;
+        --warning-color: #f39c12;
+        --border-radius: 8px;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background-color: var(--background-color);
+        color: var(--text-color);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .offline-container {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        padding: 30px;
+        max-width: 600px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .logo {
+        max-width: 200px;
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        color: var(--primary-color);
+        margin-bottom: 16px;
+        font-size: 24px;
+      }
+
+      p {
+        margin-bottom: 20px;
+        line-height: 1.6;
+        color: #666;
+      }
+
+      .icon-container {
+        margin: 30px 0;
+      }
+
+      .wifi-icon {
+        font-size: 60px;
+        color: var(--warning-color);
+      }
+
+      .button {
+        display: inline-block;
+        background-color: var(--primary-color);
+        color: white;
+        padding: 12px 24px;
+        border-radius: var(--border-radius);
+        text-decoration: none;
+        font-weight: 600;
+        margin-top: 10px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .button:hover {
+        background-color: var(--secondary-color);
+      }
+
+      .cached-content {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+      }
+
+      .cached-list {
+        list-style: none;
+        margin-top: 15px;
+        text-align: left;
+      }
+
+      .cached-list li {
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: rgba(0, 102, 204, 0.1);
+        border-radius: var(--border-radius);
+      }
+
+      footer {
+        margin-top: 40px;
+        font-size: 14px;
+        color: #888;
+      }
+
+      @media (max-width: 480px) {
+        .offline-container {
+          padding: 20px;
+        }
+
+        h1 {
+          font-size: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="offline-container">
+      <img
+        src="/icons/pwa-192x192.png"
+        alt="Celebra Capital Logo"
+        class="logo"
+        onerror="this.style.display='none'"
+      />
+
+      <h1>Você está offline</h1>
+
+      <div class="icon-container">
+        <span class="wifi-icon">📶</span>
+      </div>
+
+      <p>
+        Parece que você está sem conexão com a internet no momento. Alguns
+        recursos da Plataforma de Pré-Análise de Crédito da Celebra Capital não
+        estão disponíveis no modo offline.
+      </p>
+
+      <p>
+        Você ainda tem acesso a alguns conteúdos que foram previamente
+        carregados.
+      </p>
+
+      <button class="button" onclick="window.location.reload()">
+        Tentar novamente
+      </button>
+
+      <div class="cached-content" id="cached-content">
+        <h2>Conteúdo disponível offline:</h2>
+        <div id="cached-data-container">
+          <p>Verificando conteúdo disponível...</p>
+        </div>
+      </div>
+
+      <footer>
+        &copy; 2023 Celebra Capital - Plataforma de Pré-Análise de Crédito
+      </footer>
+    </div>
+
+    <script>
+      // Verificar regularmente se a conexão foi restabelecida
+      function checkOnlineStatus() {
+        if (navigator.onLine) {
+          document.querySelector('.wifi-icon').textContent = '📡'
+          document.querySelector('.wifi-icon').style.color =
+            'var(--success-color)'
+          setTimeout(() => {
+            window.location.href = '/'
+          }, 2000)
+        }
+      }
+
+      // Verificar a cada 5 segundos
+      setInterval(checkOnlineStatus, 5000)
+
+      // Listar conteúdo disponível offline
+      async function listCachedContent() {
+        try {
+          const cachedContentContainer = document.getElementById(
+            'cached-data-container'
+          )
+
+          if ('caches' in window) {
+            const cacheNames = await caches.keys()
+
+            if (cacheNames.length === 0) {
+              cachedContentContainer.innerHTML =
+                '<p>Nenhum conteúdo disponível offline.</p>'
+              return
+            }
+
+            let availableContent = []
+
+            // Buscar propostas salvas no IndexedDB
+            if ('indexedDB' in window) {
+              try {
+                const propostas = await getPropostasFromIndexedDB()
+                if (propostas && propostas.length > 0) {
+                  availableContent.push({
+                    type: 'Propostas',
+                    count: propostas.length,
+                    items: propostas.map(
+                      (p) => p.titulo || 'Proposta sem título'
+                    ),
+                  })
+                }
+              } catch (err) {
+                console.error('Erro ao acessar propostas no IndexedDB:', err)
+              }
+            }
+
+            // Buscar páginas cacheadas
+            try {
+              const staticCache = await caches.open('celebra-static-v1')
+              if (staticCache) {
+                const requests = await staticCache.keys()
+                const urls = requests
+                  .map((request) => request.url)
+                  .filter((url) => url.endsWith('.html') || url.endsWith('/'))
+
+                if (urls.length > 0) {
+                  availableContent.push({
+                    type: 'Páginas',
+                    count: urls.length,
+                    items: urls.map((url) => {
+                      const urlObj = new URL(url)
+                      return urlObj.pathname === '/'
+                        ? 'Página inicial'
+                        : urlObj.pathname
+                    }),
+                  })
+                }
+              }
+            } catch (err) {
+              console.error('Erro ao acessar cache:', err)
+            }
+
+            // Exibir conteúdo disponível
+            if (availableContent.length > 0) {
+              let html = ''
+
+              availableContent.forEach((content) => {
+                html += `<h3>${content.type} (${content.count})</h3>`
+                html += '<ul class="cached-list">'
+
+                content.items.slice(0, 5).forEach((item) => {
+                  html += `<li>${item}</li>`
+                })
+
+                if (content.items.length > 5) {
+                  html += `<li>E mais ${
+                    content.items.length - 5
+                  } item(s)...</li>`
+                }
+
+                html += '</ul>'
+              })
+
+              cachedContentContainer.innerHTML = html
+            } else {
+              cachedContentContainer.innerHTML =
+                '<p>Nenhum conteúdo disponível offline.</p>'
+            }
+          } else {
+            cachedContentContainer.innerHTML =
+              '<p>Seu navegador não suporta Cache API.</p>'
+          }
+        } catch (error) {
+          console.error('Erro ao listar conteúdo em cache:', error)
+          document.getElementById('cached-data-container').innerHTML =
+            '<p>Não foi possível verificar o conteúdo disponível.</p>'
+        }
+      }
+
+      // Função para obter propostas do IndexedDB
+      async function getPropostasFromIndexedDB() {
+        return new Promise((resolve, reject) => {
+          if (!('indexedDB' in window)) {
+            return resolve([])
+          }
+
+          const request = indexedDB.open('celebra-offline-db', 1)
+
+          request.onerror = function (event) {
+            reject('Erro ao abrir banco de dados: ' + event.target.errorCode)
+          }
+
+          request.onsuccess = function (event) {
+            const db = event.target.result
+
+            if (!db.objectStoreNames.contains('propostas')) {
+              return resolve([])
+            }
+
+            const transaction = db.transaction(['propostas'], 'readonly')
+            const store = transaction.objectStore('propostas')
+            const getAll = store.getAll()
+
+            getAll.onsuccess = function () {
+              resolve(getAll.result)
+            }
+
+            getAll.onerror = function (event) {
+              reject('Erro ao buscar propostas: ' + event.target.errorCode)
+            }
+          }
+
+          request.onupgradeneeded = function (event) {
+            const db = event.target.result
+            if (!db.objectStoreNames.contains('propostas')) {
+              db.createObjectStore('propostas', { keyPath: 'id' })
+            }
+          }
+        })
+      }
+
+      // Iniciar quando a página carrega
+      window.addEventListener('load', function () {
+        listCachedContent()
+        checkOnlineStatus()
+      })
+    </script>
+  </body>
+</html>

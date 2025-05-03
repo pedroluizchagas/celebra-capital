@@ -1,0 +1,117 @@
+{
+  "id": 1050,
+  "user": {
+    "id": 35,
+    "name": "Amanda Martins",
+    "email": "amanda.martins@example.com"
+  },
+  "credit_type": "consigned",
+  "amount_requested": 150000,
+  "installments": 48,
+  "status": "approved",
+  "potential_rating": "high",
+  "interest_rate": 1.2,
+  "amount_approved": 150000,
+  "installment_value": 3789.45,
+  "created_at": "2023-11-01T10:15:00",
+  "updated_at": "2023-11-03T14:20:00",
+  "company_info": {
+    "razao_social": "Martins Consultoria LTDA",
+    "cnpj": "45.678.901/0001-23",
+    "segmento": "servicos",
+    "tempo_existencia": 8
+  },
+  "financial_info": {
+    "faturamento_anual": 2500000,
+    "faturamento_mensal": 208333,
+    "margem_lucro": 32,
+    "endividamento": 25000
+  },
+  "credit_info": {
+    "finalidade": "expansao",
+    "garantias": ["imovel", "aval"],
+    "historico_credito": "excelente"
+  },
+  "documents": [
+    {
+      "id": 405,
+      "type": "documentos_contabeis",
+      "filename": "balanco_martins_2023.pdf",
+      "uploaded_at": "2023-11-01T10:15:00",
+      "status": "valid"
+    },
+    {
+      "id": 406,
+      "type": "comprovante_faturamento",
+      "filename": "faturamento_martins_12meses.pdf",
+      "uploaded_at": "2023-11-01T10:20:00",
+      "status": "valid"
+    },
+    {
+      "id": 407,
+      "type": "contrato_social",
+      "filename": "contrato_social_martins.pdf",
+      "uploaded_at": "2023-11-01T10:25:00",
+      "status": "valid"
+    }
+  ],
+  "comments": [
+    {
+      "id": 205,
+      "author": {
+        "id": 8,
+        "name": "Ricardo Gomes",
+        "role": "analyst"
+      },
+      "text": "Documentação completa verificada. Cliente com excelente histórico e capacidade de pagamento.",
+      "is_internal": true,
+      "created_at": "2023-11-02T09:30:00"
+    },
+    {
+      "id": 206,
+      "author": {
+        "id": 5,
+        "name": "Juliana Ferreira",
+        "role": "admin"
+      },
+      "text": "Aprovado conforme análise. Taxa preferencial aplicada devido ao histórico.",
+      "is_internal": true,
+      "created_at": "2023-11-03T14:15:00"
+    }
+  ],
+  "status_changes": [
+    {
+      "id": 350,
+      "previous_status": null,
+      "new_status": "pending",
+      "changed_by": {
+        "id": 35,
+        "name": "Amanda Martins"
+      },
+      "reason": "Criação da proposta",
+      "created_at": "2023-11-01T10:15:00"
+    },
+    {
+      "id": 351,
+      "previous_status": "pending",
+      "new_status": "analyzing",
+      "changed_by": {
+        "id": 8,
+        "name": "Ricardo Gomes"
+      },
+      "reason": "Início da análise",
+      "created_at": "2023-11-02T09:25:00"
+    },
+    {
+      "id": 352,
+      "previous_status": "analyzing",
+      "new_status": "approved",
+      "changed_by": {
+        "id": 5,
+        "name": "Juliana Ferreira"
+      },
+      "reason": "Proposta aprovada com condições originais",
+      "created_at": "2023-11-03T14:15:00"
+    }
+  ]
+}

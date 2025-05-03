@@ -21,6 +21,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
       - ./backend:/app
       - static_volume:/app/staticfiles
@@ -36,10 +38,71 @@ services:
       - EMAIL_HOST_USER=${EMAIL_HOST_USER}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
       - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     command: >
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
-             gunicorn celebra_capital.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
+             daphne -b 0.0.0.0 -p 8000 celebra_capital.asgi:application"
+
+  celery_worker:
+    build: ./backend
+    restart: always
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./backend:/app
+      - media_volume:/app/media
+      - logs_volume:/app/logs
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/celebra_capital
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    command: celery -A celebra_capital worker -l info -Q default,ocr,documents --concurrency=2
+
+  celery_beat:
+    build: ./backend
+    restart: always
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./backend:/app
+      - logs_volume:/app/logs
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/celebra_capital
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    command: celery -A celebra_capital beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+  flower:
+    build: ./backend
+    restart: always
+    ports:
+      - '5555:5555'
+    depends_on:
+      - redis
+      - celery_worker
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/celebra_capital
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    command: celery -A celebra_capital flower
 
   frontend:
     build: ./frontend
@@ -74,6 +137,11 @@ services:
     restart: always
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

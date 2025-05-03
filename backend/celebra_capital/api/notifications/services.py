@@ -5,6 +5,10 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 import json
 import logging
+from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 from .models import Notification, UserNotificationSettings
 from ..proposals.models import Proposal
@@ -16,6 +20,9 @@ class NotificationService:
     """
     Serviço para gerenciar notificações
     """
+    
+    def __init__(self):
+        self.channel_layer = get_channel_layer()
     
     @staticmethod
     def create_notification(
@@ -316,4 +323,284 @@ class NotificationService:
             return None
         except Exception as e:
             logger.exception(f"Erro ao enviar notificação de solicitação de documentos: {str(e)}")
-            return None 
+            return None
+
+    def _send_realtime_notification(self, notification):
+        """
+        Envia uma notificação em tempo real via WebSocket
+        """
+        try:
+            if not self.channel_layer:
+                logger.warning("Channel layer não está disponível para envio de notificação em tempo real")
+                return False
+                
+            # Preparar dados da notificação para envio
+            notification_data = {
+                'id': notification.id,
+                'title': notification.title,
+                'content': notification.content,
+                'notification_type': notification.notification_type,
+                'created_at': notification.created_at.isoformat(),
+                'is_read': notification.is_read
+            }
+            
+            # Se houver objeto relacionado, adicionar informações relevantes
+            if notification.content_type and notification.object_id:
+                notification_data['related_object'] = {
+                    'type': notification.content_type.model,
+                    'id': notification.object_id
+                }
+                
+                # Adicionar URL se for uma proposta
+                if notification.content_type.model == 'proposal':
+                    notification_data['url'] = f"/propostas/{notification.object_id}"
+            
+            # Enviar para o grupo de WebSocket do usuário
+            async_to_sync(self.channel_layer.group_send)(
+                f'notifications_{notification.recipient.id}',
+                {
+                    'type': 'notification_message',
+                    'notification': notification_data
+                }
+            )
+            
+            return True
+        except Exception as e:
+            logger.exception(f"Erro ao enviar notificação em tempo real: {str(e)}")
+            return False
+    
+    def create_notification(
+        self, 
+        recipient, 
+        title, 
+        content, 
+        notification_type='info', 
+        related_object=None, 
+        extra_data=None
+    ):
+        """
+        Cria uma nova notificação
+        """
+        try:
+            # Criar a notificação
+            notification = Notification(
+                recipient=recipient,
+                title=title,
+                content=content,
+                notification_type=notification_type,
+                extra_data=extra_data or {}
+            )
+            
+            # Adicionar objeto relacionado, se fornecido
+            if related_object:
+                content_type = ContentType.objects.get_for_model(related_object)
+                notification.content_type = content_type
+                notification.object_id = related_object.id
+            
+            notification.save()
+            
+            # Enviar por email/push se configurado pelo usuário
+            self._send_notification_by_preferences(notification, recipient)
+            
+            # Enviar em tempo real via WebSocket
+            self._send_realtime_notification(notification)
+            
+            return notification
+        except Exception as e:
+            logger.exception(f"Erro ao criar notificação: {str(e)}")
+            return None
+    
+    def _send_notification_by_preferences(self, notification, user):
+        """
+        Envia notificações baseadas nas preferências do usuário
+        """
+        try:
+            # Buscar ou criar configurações de notificação do usuário
+            notification_settings, created = UserNotificationSettings.objects.get_or_create(
+                user=user
+            )
+            
+            # Verificar se o usuário quer receber este tipo de notificação
+            should_send = True
+            
+            # Realizar verificações específicas com base no tipo
+            if notification.notification_type == 'approval' and not notification_settings.proposal_approvals:
+                should_send = False
+            elif notification.notification_type == 'rejection' and not notification_settings.proposal_rejections:
+                should_send = False
+            elif notification.notification_type == 'analysis' and not notification_settings.proposal_status_updates:
+                should_send = False
+            elif notification.notification_type == 'warning' and not notification_settings.document_requests:
+                should_send = False
+                
+            if not should_send:
+                return
+                
+            # Enviar por email se configurado
+            if notification_settings.email_notifications:
+                self._send_email_notification(notification)
+                
+            # Enviar push se configurado
+            if notification_settings.push_notifications and notification_settings.push_subscription_json:
+                self._send_push_notification(notification, notification_settings.push_subscription_json)
+                
+        except Exception as e:
+            logger.exception(f"Erro ao processar preferências de notificação: {str(e)}")
+    
+    def _send_email_notification(self, notification):
+        """
+        Envia um email de notificação para o usuário
+        """
+        try:
+            # Implementação do envio de email aqui...
+            pass
+        except Exception as e:
+            logger.exception(f"Erro ao enviar email de notificação: {str(e)}")
+    
+    def _send_push_notification(self, notification, subscription_json):
+        """
+        Envia uma notificação push para o navegador do usuário
+        """
+        try:
+            # Implementação do envio de push aqui...
+            pass
+        except Exception as e:
+            logger.exception(f"Erro ao enviar notificação push: {str(e)}")
+    
+    # --- Métodos específicos para diferentes tipos de notificações ---
+    
+    def send_status_change_notification(self, user, proposal, previous_status, new_status):
+        """
+        Envia notificação de mudança de status da proposta
+        """
+        # Mapear status para nomes amigáveis
+        status_names = {
+            'pending': 'Pendente de Análise',
+            'analyzing': 'Em Análise',
+            'approved': 'Aprovada',
+            'waiting_docs': 'Aguardando Documentos',
+            'waiting_signature': 'Aguardando Assinatura',
+            'completed': 'Concluída',
+            'rejected': 'Rejeitada',
+        }
+        
+        previous_status_name = status_names.get(previous_status, previous_status)
+        new_status_name = status_names.get(new_status, new_status)
+        
+        title = f"Atualização na sua proposta #{proposal.id}"
+        content = f"O status da sua proposta foi alterado de '{previous_status_name}' para '{new_status_name}'."
+        
+        # Determinar o tipo de notificação baseado no novo status
+        notification_type = 'info'
+        if new_status == 'approved':
+            notification_type = 'success'
+        elif new_status == 'rejected':
+            notification_type = 'error'
+        elif new_status == 'waiting_docs':
+            notification_type = 'warning'
+        elif new_status == 'analyzing':
+            notification_type = 'analysis'
+        
+        extra_data = {
+            'proposal_id': proposal.id,
+            'previous_status': previous_status,
+            'new_status': new_status,
+        }
+        
+        self.create_notification(
+            recipient=user,
+            title=title,
+            content=content,
+            notification_type=notification_type,
+            related_object=proposal,
+            extra_data=extra_data
+        )
+    
+    def send_approval_notification(self, user, proposal, comment=None):
+        """
+        Envia notificação de aprovação de proposta
+        """
+        title = "Sua proposta foi aprovada!"
+        content = f"Parabéns! Sua proposta #{proposal.id} foi aprovada."
+        
+        if comment:
+            content += f" Mensagem do analista: '{comment}'"
+        
+        extra_data = {
+            'proposal_id': proposal.id,
+            'amount_approved': str(proposal.amount_approved) if proposal.amount_approved else None,
+            'interest_rate': str(proposal.interest_rate) if proposal.interest_rate else None,
+            'installment_value': str(proposal.installment_value) if proposal.installment_value else None,
+        }
+        
+        self.create_notification(
+            recipient=user,
+            title=title,
+            content=content,
+            notification_type='success',
+            related_object=proposal,
+            extra_data=extra_data
+        )
+    
+    def send_rejection_notification(self, user, proposal, reason):
+        """
+        Envia notificação de rejeição de proposta
+        """
+        title = "Sua proposta não foi aprovada"
+        content = f"Infelizmente, sua proposta #{proposal.id} não foi aprovada. Motivo: {reason}"
+        
+        extra_data = {
+            'proposal_id': proposal.id,
+            'rejection_reason': reason
+        }
+        
+        self.create_notification(
+            recipient=user,
+            title=title,
+            content=content,
+            notification_type='error',
+            related_object=proposal,
+            extra_data=extra_data
+        )
+    
+    def send_comment_notification(self, user, proposal, comment_text):
+        """
+        Envia notificação de novo comentário em proposta
+        """
+        title = f"Novo comentário na sua proposta #{proposal.id}"
+        content = f"Um analista deixou um comentário na sua proposta: '{comment_text}'"
+        
+        extra_data = {
+            'proposal_id': proposal.id,
+            'comment': comment_text
+        }
+        
+        self.create_notification(
+            recipient=user,
+            title=title,
+            content=content,
+            notification_type='info',
+            related_object=proposal,
+            extra_data=extra_data
+        )
+    
+    def send_document_request_notification(self, user, proposal, message):
+        """
+        Envia notificação de solicitação de documentos
+        """
+        title = f"Documentos adicionais solicitados para a proposta #{proposal.id}"
+        content = message
+        
+        extra_data = {
+            'proposal_id': proposal.id,
+            'message': message
+        }
+        
+        self.create_notification(
+            recipient=user,
+            title=title,
+            content=content,
+            notification_type='warning',
+            related_object=proposal,
+            extra_data=extra_data
+        ) 

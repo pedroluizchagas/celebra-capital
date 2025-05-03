@@ -1,0 +1,116 @@
+{
+  "summary": {
+    "total_proposals": 125,
+    "total_value": 10850000,
+    "average_value": 86800,
+    "conversion_rate": 62,
+    "average_processing_time": 3.2
+  },
+  "status_distribution": {
+    "pending": 32,
+    "analyzing": 15,
+    "approved": 47,
+    "waiting_docs": 11,
+    "waiting_signature": 5,
+    "completed": 8,
+    "rejected": 7
+  },
+  "monthly_submissions": {
+    "labels": [
+      "Jan",
+      "Fev",
+      "Mar",
+      "Abr",
+      "Mai",
+      "Jun",
+      "Jul",
+      "Ago",
+      "Set",
+      "Out",
+      "Nov",
+      "Dez"
+    ],
+    "values": [8, 12, 15, 10, 9, 7, 11, 14, 17, 8, 10, 4]
+  },
+  "monthly_approved_values": {
+    "labels": [
+      "Jan",
+      "Fev",
+      "Mar",
+      "Abr",
+      "Mai",
+      "Jun",
+      "Jul",
+      "Ago",
+      "Set",
+      "Out",
+      "Nov",
+      "Dez"
+    ],
+    "values": [
+      720000, 950000, 1200000, 850000, 720000, 520000, 920000, 1050000, 1300000,
+      680000, 980000, 350000
+    ]
+  },
+  "credit_type_distribution": {
+    "personal": 45,
+    "consigned": 38,
+    "card": 22,
+    "fgts": 20
+  },
+  "potential_rating_distribution": {
+    "high": 35,
+    "medium": 48,
+    "low": 32,
+    "rejected": 10
+  },
+  "approval_time_trend": {
+    "labels": [
+      "Jan",
+      "Fev",
+      "Mar",
+      "Abr",
+      "Mai",
+      "Jun",
+      "Jul",
+      "Ago",
+      "Set",
+      "Out",
+      "Nov",
+      "Dez"
+    ],
+    "values": [4.2, 4.0, 3.8, 3.5, 3.2, 3.0, 2.8, 2.6, 2.5, 2.3, 2.2, 2.0]
+  },
+  "top_segments": [
+    {
+      "segment": "tecnologia",
+      "count": 28,
+      "approval_rate": 75,
+      "average_value": 125000
+    },
+    {
+      "segment": "servicos",
+      "count": 35,
+      "approval_rate": 68,
+      "average_value": 95000
+    },
+    {
+      "segment": "comercio",
+      "count": 22,
+      "approval_rate": 64,
+      "average_value": 85000
+    },
+    {
+      "segment": "industria",
+      "count": 15,
+      "approval_rate": 60,
+      "average_value": 150000
+    },
+    {
+      "segment": "saude",
+      "count": 12,
+      "approval_rate": 70,
+      "average_value": 110000
+    }
+  ]
+}

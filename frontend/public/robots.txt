@@ -1,0 +1,19 @@
+# www.robotstxt.org
+
+User-agent: *
+Allow: /
+
+# Áreas restritas a usuários logados
+Disallow: /app/
+Disallow: /dashboard/
+Disallow: /propostas/
+Disallow: /documentos/
+Disallow: /perfil/
+
+# Recursos estáticos públicos
+Allow: /assets/
+Allow: /images/
+Allow: /icons/
+
+# Sitemap
+Sitemap: https://www.celebracapital.com.br/sitemap.xml 

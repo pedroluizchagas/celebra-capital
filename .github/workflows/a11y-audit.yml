@@ -1,0 +1,84 @@
+name: Auditoria de Acessibilidade
+
+on:
+  workflow_dispatch: # Permite execução manual do workflow
+  schedule:
+    - cron: '0 4 * * 1' # Executa toda segunda-feira às 4h da manhã
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/src/**' # Executa quando houver mudanças no código frontend
+
+jobs:
+  a11y-audit:
+    name: Executar auditoria de acessibilidade WCAG AA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependências
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Iniciar aplicação em modo de desenvolvimento
+        run: |
+          cd frontend
+          npm run dev &
+          # Aguardar a aplicação inicializar
+          sleep 20
+        env:
+          # Variáveis necessárias para o modo de desenvolvimento
+          VITE_API_URL: http://localhost:8000/api
+          VITE_ENVIRONMENT: ci
+
+      - name: Executar auditoria de acessibilidade
+        run: |
+          cd frontend
+          # Configurar tokens de teste para autenticação na auditoria
+          export TEST_AUTH_TOKEN="test-user-token"
+          export TEST_ADMIN_TOKEN="test-admin-token"
+          node scripts/a11y-audit.js
+
+      - name: Armazenar relatório de acessibilidade
+        uses: actions/upload-artifact@v3
+        with:
+          name: a11y-report
+          path: |
+            frontend/a11y-reports/a11y-report-*.html
+            frontend/a11y-reports/a11y-results-*.json
+
+      - name: Verificar pontuação de conformidade
+        run: |
+          cd frontend
+          # Script para extrair a pontuação do relatório e falhar o build se estiver abaixo do limite
+          SCORE=$(node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const latestReport = path.join('a11y-reports', 'a11y-report-latest.html');
+            if (fs.existsSync(latestReport)) {
+              const content = fs.readFileSync(latestReport, 'utf8');
+              const match = content.match(/<div class=\"score\">(\d+)%<\/div>/);
+              if (match && match[1]) {
+                console.log(match[1]);
+                process.exit(match[1] < 70 ? 1 : 0); // Falhar se pontuação < 70%
+              } else {
+                console.log('Pontuação não encontrada');
+                process.exit(1);
+              }
+            } else {
+              console.log('Relatório não encontrado');
+              process.exit(1);
+            }
+          ")
+          echo "Pontuação de conformidade WCAG AA: $SCORE%"

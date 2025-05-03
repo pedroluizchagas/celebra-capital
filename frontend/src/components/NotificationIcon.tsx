@@ -1,28 +1,34 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useCallback, memo } from 'react'
 import { useNotifications } from '../contexts/NotificationContext'
 import { Link } from 'react-router-dom'
 
-const NotificationIcon: React.FC = () => {
+const NotificationIcon: React.FC = memo(() => {
   const { unreadCount, notifications, markAsRead, markAllAsRead } =
     useNotifications()
   const [showDropdown, setShowDropdown] = useState(false)
 
-  const toggleDropdown = () => {
-    setShowDropdown(!showDropdown)
-  }
+  const toggleDropdown = useCallback(() => {
+    setShowDropdown((prev) => !prev)
+  }, [])
 
-  const handleMarkAsRead = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation()
-    markAsRead(id)
-  }
+  const handleMarkAsRead = useCallback(
+    (id: number, e: React.MouseEvent) => {
+      e.stopPropagation()
+      markAsRead(id)
+    },
+    [markAsRead]
+  )
 
-  const handleMarkAllAsRead = (e: React.MouseEvent) => {
-    e.preventDefault()
-    markAllAsRead()
-  }
+  const handleMarkAllAsRead = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      markAllAsRead()
+    },
+    [markAllAsRead]
+  )
 
   // Formatar data relativa (ex: "há 5 minutos")
-  const formatRelativeTime = (dateString: string) => {
+  const formatRelativeTime = useCallback((dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
@@ -39,10 +45,10 @@ const NotificationIcon: React.FC = () => {
     if (diffDay < 30) return `Há ${diffDay} ${diffDay === 1 ? 'dia' : 'dias'}`
 
     return date.toLocaleDateString('pt-BR')
-  }
+  }, [])
 
   // Pegar cor do tipo de notificação
-  const getNotificationTypeColor = (type: string) => {
+  const getNotificationTypeColor = useCallback((type: string) => {
     switch (type) {
       case 'info':
         return 'bg-blue-100 text-blue-800'
@@ -61,10 +67,10 @@ const NotificationIcon: React.FC = () => {
       default:
         return 'bg-gray-100 text-gray-800'
     }
-  }
+  }, [])
 
   // Pegar ícone do tipo de notificação
-  const getNotificationTypeIcon = (type: string) => {
+  const getNotificationTypeIcon = useCallback((type: string) => {
     switch (type) {
       case 'info':
         return (
@@ -147,7 +153,75 @@ const NotificationIcon: React.FC = () => {
           </svg>
         )
     }
-  }
+  }, [])
+
+  // Memoizar a lista de notificações renderizadas para evitar re-renders desnecessários
+  const notificationsList = useMemo(() => {
+    if (notifications.length === 0) {
+      return (
+        <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          Nenhuma notificação disponível
+        </div>
+      )
+    }
+
+    return notifications.slice(0, 5).map((notification) => (
+      <div
+        key={notification.id}
+        className={`px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+          !notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+        }`}
+      >
+        <div className="flex items-start">
+          <div
+            className={`flex-shrink-0 p-1 rounded-full ${getNotificationTypeColor(
+              notification.notification_type
+            )}`}
+          >
+            {getNotificationTypeIcon(notification.notification_type)}
+          </div>
+          <div className="ml-3 flex-1">
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {notification.title}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+              {notification.content}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {formatRelativeTime(notification.created_at)}
+            </p>
+          </div>
+          {!notification.read && (
+            <button
+              onClick={(e) => handleMarkAsRead(notification.id, e)}
+              className="ml-2 p-1 text-xs text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
+            >
+              <span className="sr-only">Marcar como lida</span>
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+    ))
+  }, [
+    notifications,
+    getNotificationTypeColor,
+    getNotificationTypeIcon,
+    formatRelativeTime,
+    handleMarkAsRead,
+  ])
 
   return (
     <div className="relative">
@@ -194,66 +268,7 @@ const NotificationIcon: React.FC = () => {
               )}
             </div>
 
-            <div className="max-h-80 overflow-y-auto">
-              {notifications.length === 0 ? (
-                <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                  Nenhuma notificação disponível
-                </div>
-              ) : (
-                notifications.slice(0, 5).map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                      !notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                    }`}
-                  >
-                    <div className="flex items-start">
-                      <div
-                        className={`flex-shrink-0 p-1 rounded-full ${getNotificationTypeColor(
-                          notification.notification_type
-                        )}`}
-                      >
-                        {getNotificationTypeIcon(
-                          notification.notification_type
-                        )}
-                      </div>
-                      <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {notification.title}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                          {notification.content}
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                          {formatRelativeTime(notification.created_at)}
-                        </p>
-                      </div>
-                      {!notification.read && (
-                        <button
-                          onClick={(e) => handleMarkAsRead(notification.id, e)}
-                          className="ml-2 p-1 text-xs text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
-                        >
-                          <span className="sr-only">Marcar como lida</span>
-                          <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            <div className="max-h-80 overflow-y-auto">{notificationsList}</div>
 
             <div className="border-t border-gray-200 dark:border-gray-700">
               <Link
@@ -269,6 +284,6 @@ const NotificationIcon: React.FC = () => {
       )}
     </div>
   )
-}
+})
 
 export default NotificationIcon

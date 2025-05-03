@@ -1,0 +1,263 @@
+# Guia de Acessibilidade
+
+## Introdução
+
+Este guia fornece instruções para garantir que a plataforma de Pré-Análise de Crédito atenda aos requisitos de acessibilidade WCAG 2.1 nível AA. A acessibilidade digital é essencial para garantir que todos os usuários, independentemente de suas habilidades ou deficiências, possam acessar e utilizar nosso sistema de forma eficaz.
+
+## Componentes de acessibilidade disponíveis
+
+Nossa biblioteca de componentes inclui os seguintes recursos de acessibilidade:
+
+### SkipLinks
+
+Links que permitem aos usuários de teclado pular diretamente para o conteúdo principal, evitando a navegação repetitiva por menus.
+
+```tsx
+import SkipLinks from '../components/a11y/SkipLinks'
+
+// No layout principal
+;<SkipLinks />
+```
+
+### VisuallyHidden
+
+Componente para ocultar conteúdo visualmente, mantendo-o acessível para leitores de tela.
+
+```tsx
+import { VisuallyHidden } from '../components/a11y/VisuallyHidden'
+
+;<button>
+  <span aria-hidden="true">🔍</span>
+  <VisuallyHidden>Pesquisar</VisuallyHidden>
+</button>
+```
+
+### FocusManager
+
+Gerencia o foco do teclado em modais e diálogos, garantindo uma experiência acessível por teclado.
+
+```tsx
+import FocusManager from '../components/a11y/FocusManager'
+
+;<FocusManager isActive={isModalOpen} trapFocus={true} returnFocus={true}>
+  <div role="dialog">{/* Conteúdo do modal */}</div>
+</FocusManager>
+```
+
+### LiveRegion
+
+Anuncia conteúdo dinâmico para usuários de leitores de tela.
+
+```tsx
+import LiveRegion from '../components/a11y/LiveRegion'
+
+;<LiveRegion message="Sua solicitação foi enviada com sucesso!" role="status" />
+```
+
+### InlineFeedback
+
+Fornece feedback acessível para erros de formulário.
+
+```tsx
+import InlineFeedback from '../components/a11y/InlineFeedback'
+
+;<InlineFeedback
+  id="email-error"
+  type="error"
+  message="Email inválido"
+  assertive={true}
+/>
+```
+
+### FormAccessibility
+
+Utilitários para melhorar a acessibilidade de formulários.
+
+```tsx
+import { FormFieldWrapper, FormStatusMessage } from './a11y/FormAccessibility'
+
+;<FormFieldWrapper
+  id="email"
+  label="Email"
+  error={errors.email}
+  required={true}
+>
+  <input
+    type="email"
+    {...getAccessibleFieldProps('email', errors.email, undefined, true)}
+  />
+</FormFieldWrapper>
+```
+
+### KeyboardNavigation
+
+Facilita a implementação de navegação por teclado em componentes personalizados.
+
+```tsx
+import KeyboardNavigation from '../components/a11y/KeyboardNavigation'
+
+;<KeyboardNavigation
+  keyMap={{
+    ArrowDown: () => selectNextItem(),
+    ArrowUp: () => selectPreviousItem(),
+    Enter: () => confirmSelection(),
+    Escape: () => closeDropdown(),
+  }}
+>
+  <ul role="listbox">{/* Items */}</ul>
+</KeyboardNavigation>
+```
+
+### AccessibilityToggle
+
+Painel de controle que permite aos usuários personalizar a experiência de acordo com suas necessidades.
+
+```tsx
+import AccessibilityToggle from '../components/a11y/AccessibilityToggle'
+
+;<AccessibilityToggle />
+```
+
+## Testes de acessibilidade
+
+Utilizamos ferramentas automatizadas e testes manuais para garantir a conformidade com os padrões de acessibilidade:
+
+### Testes automatizados
+
+```tsx
+import {
+  testAccessibility,
+  testFormAccessibility,
+} from '../utils/a11y-test-helpers'
+
+// Em um teste de componente
+it('deve estar em conformidade com diretrizes de acessibilidade', async () => {
+  const { container } = render(<MeuComponente />)
+  await testAccessibility(container)
+})
+
+// Para formulários
+it('deve ter formulário acessível', async () => {
+  const { container } = render(<MeuFormulario />)
+  const form = container.querySelector('form')
+  const results = await testFormAccessibility(form)
+  expect(results.labelTests.valid).toBe(true)
+})
+```
+
+### Testes manuais
+
+Para garantir a conformidade completa, também realizamos testes manuais com:
+
+1. **Navegação por teclado**: Verificamos se todas as funcionalidades podem ser acessadas usando apenas o teclado
+2. **Leitores de tela**: Testamos com NVDA (Windows) e VoiceOver (macOS)
+3. **Ampliação**: Testamos a usabilidade com zoom de até 200%
+4. **Contraste**: Verificamos se o contraste atende aos requisitos mínimos (4.5:1 para texto normal)
+
+## Diretrizes para desenvolvedores
+
+### Semântica HTML
+
+Utilize elementos HTML semânticos e apropriados:
+
+- `<button>` para ações, não `<div onclick>`
+- `<a>` para links, não `<span onclick>`
+- Estrutura de cabeçalhos (`<h1>` a `<h6>`) lógica e sequencial
+- Listas (`<ul>`, `<ol>`, `<dl>`) para conteúdo em lista
+
+### Formulários acessíveis
+
+Sempre associe labels aos campos:
+
+```html
+<label for="nome">Nome</label> <input id="nome" type="text" />
+```
+
+Forneça mensagens de erro acessíveis:
+
+```tsx
+;<input
+  id="email"
+  aria-invalid={!!errors.email}
+  aria-describedby={errors.email ? 'email-error' : undefined}
+/>
+{
+  errors.email && (
+    <div id="email-error" role="alert">
+      {errors.email}
+    </div>
+  )
+}
+```
+
+### Teclado e foco
+
+- Mantenha uma ordem de tabulação lógica
+- Não use `tabindex` maior que 0
+- Forneça indicadores de foco visíveis (não remova o outline)
+- Implemente armadilhas de foco em modais usando `FocusManager`
+
+### Imagens e mídia
+
+- Adicione texto alternativo em todas as imagens: `<img alt="Descrição da imagem" />`
+- Para imagens decorativas, use alt vazio: `<img alt="" />`
+- Forneça legendas e transcrições para vídeos
+- Não dependa apenas de cores para transmitir informações
+
+### ARIA
+
+Use atributos ARIA quando necessário, mas prefira HTML semântico:
+
+- `aria-label` para fornecer rótulos a elementos sem texto visível
+- `aria-expanded` para indicar estados de expansão (menus, acordeões)
+- `aria-controls` para indicar qual elemento é controlado
+- `aria-live` para anunciar conteúdo dinâmico
+
+### Contraste e visualização
+
+- Garanta uma relação de contraste mínima de 4.5:1 para texto normal
+- Permita redimensionamento de texto até 200% sem perda de funcionalidade
+- Não bloqueie o zoom da página
+- Evite texto em imagens
+
+## Conformidade WCAG 2.1 AA
+
+Nossa plataforma busca atender aos seguintes critérios de sucesso:
+
+### Princípio 1: Perceptível
+
+- 1.1 Alternativas em texto
+- 1.2 Mídia baseada em tempo
+- 1.3 Adaptável
+- 1.4 Discernível
+
+### Princípio 2: Operável
+
+- 2.1 Acessível por teclado
+- 2.2 Tempo suficiente
+- 2.3 Convulsões e reações físicas
+- 2.4 Navegável
+- 2.5 Modalidades de entrada
+
+### Princípio 3: Compreensível
+
+- 3.1 Legível
+- 3.2 Previsível
+- 3.3 Assistência de entrada
+
+### Princípio 4: Robusto
+
+- 4.1 Compatível
+
+Para detalhes completos sobre cada critério, consulte o documento WCAG_AA_COMPLIANCE.md no repositório.
+
+## Recursos adicionais
+
+- [Guia WCAG 2.1](https://www.w3.org/TR/WCAG21/)
+- [WebAIM: Introdução à acessibilidade web](https://webaim.org/intro/)
+- [Axe: Ferramenta de teste de acessibilidade](https://www.deque.com/axe/)
+- [NVDA: Leitor de tela gratuito para Windows](https://www.nvaccess.org/)
+
+## Reportando problemas de acessibilidade
+
+Se você encontrar problemas de acessibilidade na plataforma, por favor, abra um issue no repositório com o label "acessibilidade" ou entre em contato com a equipe de desenvolvimento.
