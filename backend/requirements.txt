@@ -18,6 +18,7 @@ django-debug-toolbar==4.2.0
 pywebpush==1.14.0
 xlsxwriter==3.2.3
 reportlab==4.2.0
+structlog==23.3.0
 
 # OCR
 google-cloud-vision==3.4.3
